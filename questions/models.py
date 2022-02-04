@@ -27,6 +27,7 @@ class Question(models.Model):
 
 class Answer(models.Model):
     author = models.ForeignKey(sett.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
     content = models.TextField()
     created_on = models.DateTimeField(auto_now_add=True)
     answer_flag = models.IntegerField(choices=ANSWER_STATUS, default=0)

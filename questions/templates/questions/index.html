@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Questions page</title>
+  </head>
+  <body>
+    {% if queryset %}
+        <ul>
+        {% for question in queryset %}
+            <li>Id: {{ question.id }}</li>
+            <li>Title: <a href="{% url 'questions:question' question.id %}">{{ question.title }}</a></li>
+            <li>Status: {{ question.status }}</li>
+            <hr>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No questions are available.</p>
+    {% endif %}
+  </body>
+</html>
