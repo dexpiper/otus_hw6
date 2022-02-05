@@ -6,11 +6,16 @@
   </head>
   <body>
     {% if queryset %}
+    {% load static %}
         <ul>
         {% for question in queryset %}
             <li>Id: {{ question.id }}</li>
-            <li>Title: <a href="{% url 'questions:question' question.id %}">{{ question.title }}</a></li>
-            <li>Status: {{ question.status }}</li>
+            <p>Title: <a href="{% url 'questions:question' question.id %}">{{ question.title }}
+              {% if question.status == 1 %}
+              <img src="{% static 'questions/accept.png' %}" alt="Answered" width="20" height="20">
+              {% else %}
+              <img src="{% static 'questions/question.png' %}" alt="No answer yet" width="20" height="20">
+              {% endif %}
             <hr>
         {% endfor %}
         </ul>

@@ -11,8 +11,17 @@
     <p>{{ question.content }}</p>
 
     ***
-    <p><b>Answer status:</b> {% if question.status == 1 %} Answered! {% else %} No good answer yet. {% endif %}</p>
-    <p><b>Tags:</b> {% if tags %} {% for tag in tags %} {{ tag }} {% endfor %} {% else %} No tags provided. {% endif %}</p>
+    {% load static %}
+    <p><b>Answer status:</b> 
+      {% if question.status == 1 %}
+      <img src="{% static 'questions/accept.png' %}" alt="Answered" width="20" height="20">
+      {% else %}
+      <img src="{% static 'questions/question.png' %}" alt="No answer yet" width="20" height="20">
+      {% endif %}</p>
+
+    <p><b>Tags:</b> {% if tags %} {% for tag in tags %} 
+      <a href="{% url 'questions:searchtag' tag.id %}">{{ tag.title }}</a> 
+      {% endfor %} {% else %} No tags provided. {% endif %}</p>
 
 
     <h1>Answers:</h1>
@@ -21,11 +30,18 @@
     {% if answer_query %}
     <ul>
     {% for answer in answer_query %}
-        <li>Id: {{ answer.id }}</li>
+        <li>Id: {{ answer.id }}
+          <a href="{% url 'questions:alterflag' answer.id %}">
+          {% if answer.answer_flag == 1 %}
+            <img src="{% static 'questions/star.png' %}" alt="Best answer" width="20" height="20">
+          {% else %}
+            <img src="{% static 'questions/emptystar.png' %}" alt="Ordinary answer" width="20" height="20">
+          {% endif %}
+          </a>
+        </li>
         <li>Author: {{ answer.author }}</li>
         <li>Content: {{ answer.content }}</li>
         <li>Created: {{ answer.created_on }}</li>
-        <li>Best answer: {{ answer.answer_flag }}</li>
         <hr>
         <p></p>
 

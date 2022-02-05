@@ -25,10 +25,7 @@ def question(request, question_id, fallback=False):
     except ObjectDoesNotExist:
         answer_query = None
     try:
-        tags = []
-        query_tags = Tag.objects.filter(questions=question_id)
-        if len(query_tags):
-            tags = [tag.title for tag in query_tags]
+        tags = Tag.objects.filter(questions=question_id)
     except ObjectDoesNotExist:
         pass
     context = {
@@ -54,3 +51,72 @@ def answer_question(request, question_id):
         answer.save()
         return HttpResponseRedirect(
             reverse('questions:question', args=(qw.id,)))
+
+
+def make_question(request):
+    return render(request, 'questions/make_question.html')
+
+
+def save_question(request):
+    try:
+        username = request.POST['username']
+        question_title = request.POST['title']
+        question_content = request.POST['content']
+        question_tags = request.POST['tags'].split()
+    except (KeyError, ObjectDoesNotExist):
+        raise
+    try:
+        question = Question(
+            author=User.objects.get(username=username),
+            title=question_title,
+            content=question_content
+        )
+        question.save()
+    except ObjectDoesNotExist:
+        raise
+    if question_tags:
+        for tag in question_tags:
+            tag = tag.strip()
+            try:
+                old_tag = Tag.objects.get(title=tag)
+            except ObjectDoesNotExist:
+                pass
+            else:
+                old_tag.questions.add(question)
+                continue
+            try:
+                t = Tag.objects.create(title=tag)
+                t.questions.add(question)
+            except (KeyError, TypeError, ObjectDoesNotExist):
+                raise
+    return HttpResponseRedirect(
+        reverse('questions:question', args=(question.id,)))
+
+
+def search_tag(request, tag_id):
+    queryset = Tag.objects.get(id=tag_id).questions.all()
+    context = {'queryset': queryset}
+    return render(request, 'questions/tag.html', context)
+
+
+def alter_flag(request, answer_id):
+    answer = Answer.objects.get(pk=answer_id)
+    qw = answer.question
+    if answer.answer_flag == 1:
+        answer.answer_flag = 0
+        qw.status = 0
+        answer.save()
+        qw.save()
+    else:
+        if qw.status == 0:
+            answer.answer_flag = 1
+            qw.status = 1
+            qw.save()
+            answer.save()
+        elif qw.status == 1:
+            prev_answer = qw.answer_set.get(answer_flag=1)
+            prev_answer.answer_flag = 0
+            answer.answer_flag = 1
+            prev_answer.save()
+            answer.save()
+    return HttpResponseRedirect(request.META['HTTP_REFERER'])
