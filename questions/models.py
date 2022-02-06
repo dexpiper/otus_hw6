@@ -1,6 +1,8 @@
 from django.db import models
 from django.conf import settings as sett
 
+from .helpers import get_time_diff
+
 
 QUESTION_STATUS = (
     (0, 'No_answer'),
@@ -20,9 +22,28 @@ class Question(models.Model):
     content = models.TextField()
     created_on = models.DateTimeField(auto_now_add=True)
     status = models.IntegerField(choices=QUESTION_STATUS, default=0)
+    votes = models.IntegerField(default=0)
 
     def __str___(self):
         return self.title
+
+    def get_answers_number(self):
+        return Answer.objects.filter(question=self.id).count()
+
+    def get_tags(self):
+        return Tag.objects.filter(questions=self.id)
+
+    @property
+    def number_answers(self):
+        return self.get_answers_number()
+
+    @property
+    def tags(self):
+        return self.get_tags()
+
+    @property
+    def asked_ago(self):
+        return get_time_diff(self.created_on)
 
 
 class Answer(models.Model):
@@ -31,6 +52,7 @@ class Answer(models.Model):
     content = models.TextField()
     created_on = models.DateTimeField(auto_now_add=True)
     answer_flag = models.IntegerField(choices=ANSWER_STATUS, default=0)
+    votes = models.IntegerField(default=0)
 
 
 class Tag(models.Model):
