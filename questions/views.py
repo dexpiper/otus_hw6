@@ -2,8 +2,7 @@ from .models import Question, Answer, Tag
 from users.models import User
 from django.shortcuts import render
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import Http404
-from django.http import HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse
 
 #  from django.http import HttpResponse
@@ -11,13 +10,13 @@ from django.urls import reverse
 
 def index(request):
     queryset = Question.objects.all().order_by('-created_on', 'title')
-    context = {'queryset': queryset}
+    context = {'queryset': queryset, 'trending': Question.trending}
     return render(request, 'questions/index.html', context)
 
 
 def index_hot(request):
-    queryset = Question.objects.all().order_by('votes', 'title')
-    context = {'queryset': queryset}
+    queryset = Question.objects.all().order_by('-votes', 'title')
+    context = {'queryset': queryset, 'trending': Question.trending()}
     return render(request, 'questions/hot_questions.html', context)
 
 
@@ -27,7 +26,8 @@ def question(request, question_id, fallback=False):
     except Question.DoesNotExist:
         raise Http404('No such question :(')
     try:
-        answer_query = Answer.objects.filter(question=question_id)
+        answer_query = Answer.objects.filter(question=question_id).order_by(
+            '-votes', '-answer_flag')
     except ObjectDoesNotExist:
         answer_query = None
     try:
@@ -125,4 +125,26 @@ def alter_flag(request, answer_id):
             answer.answer_flag = 1
             prev_answer.save()
             answer.save()
+    return HttpResponseRedirect(request.META['HTTP_REFERER'])
+
+
+def answer_vote(request, answer_id, upvote=1):
+    answer = Answer.objects.get(pk=answer_id)
+    # TODO User check
+    if upvote:
+        answer.votes += 1
+    else:
+        answer.votes -= 1
+    answer.save()
+    return HttpResponseRedirect(request.META['HTTP_REFERER'])
+
+
+def question_vote(request, question_id, upvote=1):
+    qw = Question.objects.get(pk=question_id)
+    # TODO User check
+    if upvote:
+        qw.votes += 1
+    else:
+        qw.votes -= 1
+    qw.save()
     return HttpResponseRedirect(request.META['HTTP_REFERER'])

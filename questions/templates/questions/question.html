@@ -15,7 +15,9 @@
       <div class="row">
         <div class="col-2">
           <div class="row">
-            <a href="#"><img src="{% static 'questions/up_arrow.png' %}" alt="Upvote" width="40" height="40"></a>
+            <a href="{% url 'questions:questionvote' question.id 1 %}">
+              <img src="{% static 'questions/up_arrow.png' %}" alt="Upvote" width="40" height="40">
+            </a>
           </div>
           <div class="row">
             <div class="col-1">
@@ -23,7 +25,9 @@
             </div>
           </div>
           <div class="row">
-            <a href="#"><img src="{% static 'questions/down_arrow.png' %}" alt="Downvote" width="40" height="40"></a>
+            <a href="{% url 'questions:questionvote' question.id 0 %}">
+              <img src="{% static 'questions/down_arrow.png' %}" alt="Downvote" width="40" height="40">
+            </a>
           </div>
         </div>
         <div class="col-10">
@@ -49,6 +53,7 @@
     </div>
   </div>
 </div>
+<h4 style="margin-left:10px;">Answers</h4>
 
 {% if answer_query %}
 
@@ -61,7 +66,10 @@
       <div class="row">
         <div class="col-2">
           <div class="row">
-            <a href="#"><img src="{% static 'questions/up_arrow.png' %}" alt="Upvote" width="40" height="40"></a>
+            <!-- ANSWER VOTING-->
+            <a href="{% url 'questions:answervote' answer.id 1 %}">
+              <img src="{% static 'questions/up_arrow.png' %}" alt="Upvote" width="40" height="40">
+            </a>
           </div>
           <div class="row">
             <div class="col-1">
@@ -69,21 +77,26 @@
             </div>
           </div>
           <div class="row">
-            <a href="#"><img src="{% static 'questions/down_arrow.png' %}" alt="Downvote" width="40" height="40"></a>
+            <a href="{% url 'questions:answervote' answer.id 0 %}">
+              <img src="{% static 'questions/down_arrow.png' %}" alt="Downvote" width="40" height="40">
+            </a>
           </div>
           <div class="row" style="margin-top:10px">
-            <div class="col-1">
+            <div class="col-1"></div>
+            <div class="col-12">
               <!-- BEST ANSWER LOGIC-->
               {% if answer.answer_flag == 1 %}
-              <a href="#"><img src="{% static 'questions/star.png' %}" alt="Best answer" width="20" height="20"></a>
+              <a href="{% url 'questions:alterflag' answer.id %}"><img src="{% static 'questions/star.png' %}" alt="Best answer" width="20" height="20"></a>
               {% else %}
-              <a href="#"><img src="{% static 'questions/emptystar.png' %}" alt="Ordinary answer" width="20" height="20"></a>
+              <a href="{% url 'questions:alterflag' answer.id %}"><img src="{% static 'questions/emptystar.png' %}" alt="Ordinary answer" width="20" height="20"></a>
               {% endif %}
             </div>
+            <div class="col-1"></div>
           </div>
         </div>
         <div class="col-10">
           <div class="row">
+            <!-- ANSWER CONTENT -->
             <p>{{ answer.content }}</p>
           </div>
           <div class="row">
@@ -108,13 +121,14 @@
 {% endif %}
 
 <hr>
+<!-- ANSWER FORM -->
 <legend><h3>Your answer:</h3></legend>
-<form action="{% url 'questions:answer' question.id %}" method="post">
+<form action="{% url 'questions:answer' question.id %}" method="post" style="margin-bottom:40px;">
   {% csrf_token %}
   {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
   <p><textarea cols="70" rows="5" name="answer_text"></textarea></p>
-  <input type="submit" value="Submit">
-  <input type="reset" value="Clear">
+  <input type="submit" class="btn btn-primary" value="Submit">
+  <input type="reset" class="btn btn-secondary" value="Clear">
 </form>
 
 

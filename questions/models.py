@@ -45,6 +45,11 @@ class Question(models.Model):
     def asked_ago(self):
         return get_time_diff(self.created_on)
 
+    @classmethod
+    def trending(cls):
+        queryset = cls.objects.all().order_by('-votes')
+        return queryset[:6]
+
 
 class Answer(models.Model):
     author = models.ForeignKey(sett.AUTH_USER_MODEL, on_delete=models.CASCADE)
