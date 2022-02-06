@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
     <!-- TITLE -->
-    {% block title %}<title>Hasker - qwestions</title>{% endblock %}
+    {% block title %}<title>Hasker - questions</title>{% endblock %}
     {% load static %}
 
 </head>
@@ -56,9 +56,11 @@
                         <button class="btn btn-outline-success btn-block" type="button">Ask!</button>
                     </form>
                 
-                    <div class="container-fluid" style="margin-top: 20px;">
+                    <div class="container-fluid" style="margin-top: 50px;">
                         <div class="row">
-                            <p class="text-center font-weight-bold">Trending</p>
+                            <div class="col-12" style="margin-bottom: 10px;">
+                                <h4 class="text-center">Trending</h>
+                            </div>
                         </div>
                         <div class="row">
                             <!-- TRENDING section -->

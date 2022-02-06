@@ -1,66 +1,121 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Question details page</title>
-  </head>
-  <body>
-    <h1>{{ question.title }}</h1>
-    <h4><i>Author: {{ question.author }}. Created: {{ question.created_on }}</i></h4>
-    <hr>
-    <p>{{ question.content }}</p>
+{% extends "base.html" %}
 
-    ***
-    {% load static %}
-    <p><b>Answer status:</b> 
-      {% if question.status == 1 %}
-      <img src="{% static 'questions/accept.png' %}" alt="Answered" width="20" height="20">
-      {% else %}
-      <img src="{% static 'questions/question.png' %}" alt="No answer yet" width="20" height="20">
-      {% endif %}</p>
+{% block title %}<title>Hasker: {{ question.title }}</title>{% endblock %}
 
-    <p><b>Tags:</b> {% if tags %} {% for tag in tags %} 
-      <a href="{% url 'questions:searchtag' tag.id %}">{{ tag.title }}</a> 
-      {% endfor %} {% else %} No tags provided. {% endif %}</p>
+{% block content %}
+{% load static %}
 
+<div class="card border-light mb-3" style="max-width: 60rem; margin-top:5px; margin-bottom:80px;">
+  <div class="card-header">
+    <h4>{{ question.title }}</h4>
+    <h8><i>Author: {{ question.author }}. Created: {{ question.created_on }}</i></h8>
+  </div>
+  <div class="card-body">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-2">
+          <div class="row">
+            <a href="#"><img src="{% static 'questions/up_arrow.png' %}" alt="Upvote" width="40" height="40"></a>
+          </div>
+          <div class="row">
+            <div class="col-1">
+              <h5 class="text-align:center">{{ question.votes }}</h5>
+            </div>
+          </div>
+          <div class="row">
+            <a href="#"><img src="{% static 'questions/down_arrow.png' %}" alt="Downvote" width="40" height="40"></a>
+          </div>
+        </div>
+        <div class="col-10">
+          <div class="row">
+            <p>{{ question.content }}</p>
+          </div>
+          <div class="row">
+            <div class="col-7">
+              <!-- TAGS -->
+              <p class="card-text">
+                {% for tag in question.tags %}
+                <a href="{% url 'questions:searchtag' tag.id %}" class="badge badge-info">{{ tag.title }}</a>
+                {% endfor %}
+              </p>
+            </div>
+            <div class="col-3">
+              <!-- AUTHOR -->
+              <p><a href="#" class="text-primary">{{ question.author }}</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-    <h1>Answers:</h1>
-    <hr>
+{% if answer_query %}
 
-    {% if answer_query %}
-    <ul>
-    {% for answer in answer_query %}
-        <li>Id: {{ answer.id }}
-          <a href="{% url 'questions:alterflag' answer.id %}">
-          {% if answer.answer_flag == 1 %}
-            <img src="{% static 'questions/star.png' %}" alt="Best answer" width="20" height="20">
-          {% else %}
-            <img src="{% static 'questions/emptystar.png' %}" alt="Ordinary answer" width="20" height="20">
-          {% endif %}
-          </a>
-        </li>
-        <li>Author: {{ answer.author }}</li>
-        <li>Content: {{ answer.content }}</li>
-        <li>Created: {{ answer.created_on }}</li>
-        <hr>
-        <p></p>
+{% for answer in answer_query %}
 
-    {% endfor %}
+<div class="card border-light mb-3" style="max-width: 60rem; margin-top:5px; margin-bottom:80px;">
+  <div class="card-header"></div>
+  <div class="card-body">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-2">
+          <div class="row">
+            <a href="#"><img src="{% static 'questions/up_arrow.png' %}" alt="Upvote" width="40" height="40"></a>
+          </div>
+          <div class="row">
+            <div class="col-1">
+              <h5 class="text-align:center">{{ answer.votes }}</h5>
+            </div>
+          </div>
+          <div class="row">
+            <a href="#"><img src="{% static 'questions/down_arrow.png' %}" alt="Downvote" width="40" height="40"></a>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <div class="col-1">
+              <!-- BEST ANSWER LOGIC-->
+              {% if answer.answer_flag == 1 %}
+              <a href="#"><img src="{% static 'questions/star.png' %}" alt="Best answer" width="20" height="20"></a>
+              {% else %}
+              <a href="#"><img src="{% static 'questions/emptystar.png' %}" alt="Ordinary answer" width="20" height="20"></a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="col-10">
+          <div class="row">
+            <p>{{ answer.content }}</p>
+          </div>
+          <div class="row">
+            <div class="col-7">
+              <p class="text-secondary">Created: {{ answer.created_on }}</p>
+            </div>
+            <div class="col-3">
+              <!-- ANSWER AUTHOR -->
+              <p><a href="#" class="text-primary">{{ answer.author }}</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endfor %}
     </ul>
 {% else %}
     <p>No answers for that question yet. Write one?..</p>
 {% endif %}
 
-    <hr>
-    <legend><h3>Your answer:</h3></legend>
-    <form action="{% url 'questions:answer' question.id %}" method="post">
-      {% csrf_token %}
-      {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
-      <p><textarea cols="70" rows="5" name="answer_text"></textarea></p>
-      <input type="submit" value="Submit">
-      <input type="reset" value="Clear">
-    </form>
+<hr>
+<legend><h3>Your answer:</h3></legend>
+<form action="{% url 'questions:answer' question.id %}" method="post">
+  {% csrf_token %}
+  {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+  <p><textarea cols="70" rows="5" name="answer_text"></textarea></p>
+  <input type="submit" value="Submit">
+  <input type="reset" value="Clear">
+</form>
 
 
-  </body>
-</html>
+{% endblock %}
