@@ -1,22 +1,33 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% load static %}
+<div class="container-fluid">
+    <ul class="nav nav-tabs card-header-tabs">
+      <li class="nav-item">
+        <a class="nav-link active" href="#">New questions</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="{% url 'questions:hot' %}">Hot questions</a>
+      </li>
+    </ul>
+</div>
 
     {% if queryset %}
-    {% load static %}
+
+
         {% for question in queryset %}
         
           <div class="card border-light mb-3" style="max-width: 60rem; margin-top:5px; margin-bottom:5px;">
 
             <div class="card-header">
-              id #{{ question.id }}
-              
+              <div class="text-muted">id #{{ question.id }}
               {% if question.status == 1 %}
               <img src="{% static 'questions/accept.png' %}" alt="Answered" width="20" height="20">
               {% elif question.status == 0 and question.number_answers == 0 %}
               <img src="{% static 'questions/question.png' %}" alt="No answer yet" width="20" height="20">
               {% endif %}
-
+              </div>
             </div>
 
             <div class="card-body">
@@ -30,7 +41,7 @@
                     <div class="row">{{ question.number_answers }}</div>
                     <div class="row">Answers</div>
                   </div>
-                  <div class="col-5" style="margin-left: 5px;">
+                  <div class="col-7" style="margin-left: 10px;">
                     <a href="{% url 'questions:question' question.id %}" class="card-block stretched-link text-decoration-none" style="text-decoration: none;">
                     <h5 class="card-title">
                       {{ question.title }}
@@ -43,8 +54,12 @@
                     </p>
                   </div>
                   <div class="col-2" style="margin-left: 5px;">
-                    <div class="row">{{ question.author }}</div>
-                    <div class="row">{{ question.asked_ago }}</div>
+                    <div class="row">
+                      <p><a href="#" class="text-primary">{{ question.author }}</a></p>
+                    </div>
+                    <div class="row">
+                      <p class="text-secondary">{{ question.asked_ago }}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -54,5 +69,6 @@
     {% else %}
         <p>No questions are available.</p>
     {% endif %}
+
 
 {% endblock %}

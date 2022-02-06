@@ -10,9 +10,15 @@ from django.urls import reverse
 
 
 def index(request):
-    queryset = Question.objects.all()
+    queryset = Question.objects.all().order_by('-created_on', 'title')
     context = {'queryset': queryset}
     return render(request, 'questions/index.html', context)
+
+
+def index_hot(request):
+    queryset = Question.objects.all().order_by('votes', 'title')
+    context = {'queryset': queryset}
+    return render(request, 'questions/hot_questions.html', context)
 
 
 def question(request, question_id, fallback=False):
