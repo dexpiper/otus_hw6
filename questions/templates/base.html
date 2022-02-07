@@ -13,10 +13,10 @@
     {% load static %}
 
 </head>
-<body>
+<body style="position: relative; min-height: 100%;">
     <div class="container-fluid" style="max-width:80%;">
         <div class="container-fluid">
-            <nav class="navbar navbar-dark bg-dark">
+            <nav class="navbar navbar-dark bg-dark py-1">
                 <!-- Navbar content -->
                 <a class="navbar-brand" href="{% url 'questions:index' %}">
                     <img src="{% static 'questions/layers.png' %}" width="25" height="25" class="d-inline-block align-top" alt="">
@@ -30,20 +30,42 @@
                     <input class="form-control form-control-sm mr-sm-2" type="search" placeholder="Search" aria-label="Search">
                     <button class="btn btn-sm btn-outline-secondary btn-sm mr-sm-2" type="submit">Search</button>
                 </form>
+                {% if user.id %}
+                <form class="form-inline">
+                    {% if user.avatar %}
+                    <!-- USER AVATAR -->
+                    <img src="#" alt="User avatar" width="100" height="100" style="margin-right:15px;">
+                    {% else %}
+                    <img src="{% static 'users/userpic.png' %}" alt="Default avatar" width="70" height="70" style="margin-right:15px;">
+                    {% endif %}
+                    <!-- Profile link -->
+                    <div class="col">
+                    <div class="row">
+                        <p><a href="{% url 'users:profile' %}" class="text-success" style="margin-right:15px;">{{ user.username }}</a></p>
+                    </div>
+                    <div class="row">
+                    <!-- Exit link -->
+                        <div style="margin-right:30px; margin-bottom: 5px;">
+                            <a href="{% url 'users:logout' %}"><img src="{% static 'users/exit.png' %}" alt="Exit sign" width="25" height="25"></a>
+                        </div>
+                    </div>
+                </form>
+                {% else %}
                 <form class="form-inline">    
                     <ul class="navbar-nav mr-auto mt-2 mt-lg-0 mr-sm-3">
                         <li class="nav-item">
                           <!-- Log-in -->
-                          <a class="nav-link" href="#">Log in</a>
+                          <a class="nav-link" href="{% url 'users:login' %}">Log in</a>
                         </li>
                       </ul>
                     <!-- Sign up -->
-                    <button class="btn btn-outline-success my-2 btn-sm mr-sm-2" type="button">Sign up</button>
+                    <a class="btn btn-outline-success my-2 btn-sm mr-sm-2" type="button" href="{% url 'users:signup' %}">Sign up</a>
                 </form>
+                {% endif %}
             </nav>
         </div>
 
-        <div class="container-fluid" style="margin-top: 10px;">
+        <div class="container-fluid" style="margin-top: 10px; min-height:100%; position:relative; margin-bottom: 40px">
             <div class="row">
                 <div class="col-8">
                     <!-- CONTENT -->
@@ -89,15 +111,16 @@
     </div>
 
     <!-- Footer -->
-    <div class="container-fluid" style="max-width:80%;">
-        <div class="container-fluid">
-            <nav class="navbar navbar-dark bg-dark">
-                <span class="navbar-text">
-                    (c) Alex Kurilov, 2022
-                </span>
-            </nav>
+    <div class="navbar-fixed-bottom row-fluid">
+        <div class="container-fluid" style="max-width:80%; height: 25px;">
+            <div class="container-fluid">
+                <nav class="navbar navbar-dark bg-dark">
+                    <span class="navbar-text">
+                        (c) Alex Kurilov, 2022
+                    </span>
+                </nav>
+            </div>
         </div>
     </div>
-
 </body>
 </html>

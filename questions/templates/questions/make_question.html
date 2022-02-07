@@ -5,27 +5,38 @@
 {% block content %}
 {% load static %}
 
-
-<legend><h3>Make your own question:</h3></legend>
-<hr>
-<form action="{% url 'questions:save_question' %}" method="post">
+<form action="{% url 'questions:save_question' %}" method="post" style="margin-bottom:40px; margin-top:40px; margin-left:15px; margin-right:25px;">
+  <legend><h2 style="margin-bottom:20px;">Ask your question</h2></legend>
+  
   {% csrf_token %}
   {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
-  
-  <p><label for="username">Username:</label>
-  <input type="text" name="username" id="username"></input></p>
 
-  <p><label for="title">Title:</label>
-  <input type="text" name="title" id="title"></input></p>
-  
-  <p><label for="content">Your question here:</label></p>
-  <p><textarea cols="70" rows="5" name="content" id="content"></textarea></p>
-  
-  <label for="tags">Tags:</label>
-  <input type="text" name="tags" id="tags"></input>
-
-  <input type="submit" class="btn btn-primary" value="Submit">
-  <input type="reset" class="btn btn-secondary" value="Clear">
+  <div class="mb-3">
+    <label for="username" class="form-label">Username:</label>
+    <input type="text" class="form-control" name="username" id="username"></input>
+  </div>
+  <div class="mb-3">
+    <label for="title" class="form-label">Title:</label>
+    <input type="text" class="form-control" name="title" id="title" placeholder="Question title"></input>
+  </div>
+  <div class="mb-3">
+    <label for="content" class="form-label">Your question:</label>
+    <textarea class="form-control" id="content" name="content" rows="6" placeholder="Your question"></textarea>
+  </div>
+  <div class="mb-3">
+    <label for="tags" class="form-label">Tags:</label>
+    <input class="form-control" list="datalistOptions" id="tags" name="tags" placeholder="Type your tags here"></input>
+    <datalist id="datalistOptions">
+      {% if tags %}
+      {% for tag in tags %}
+      <option value="{{ tag }}">
+        {% endfor %}
+      {% endif %}
+    </datalist>
+    <div id="tagsHelp" class="form-text">Please provide up to 3 one-word tags separated by spaces</div>
+  </div>
+  <input type="submit" class="btn btn-primary" value="Submit"></input>
+  <input type="reset" class="btn btn-secondary" value="Clear"></input>
 </form>
 
 {% endblock %}

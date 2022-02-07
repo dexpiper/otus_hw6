@@ -14,9 +14,8 @@ def get_time_diff(thetime):
     elif delta.total_seconds() > 60*60*24:  # day
         return f'{delta.days} day(s) ago'
     elif delta.total_seconds() > 60*60:  # hours
-        print(delta.total_seconds() / 60 / 60)
         return f'{round(delta.seconds/60/60)} hour(s) ago'
     elif delta.total_seconds() > 60:  # minutes
-        return f'{delta.total_seconds() * 60} minute(s) ago'
+        return f'{round(delta.total_seconds() / 60)} minute(s) ago'
     else:
         return 'Just now'

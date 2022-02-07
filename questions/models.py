@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings as sett
+# from django.contrib.auth import get_user_model
 
 from .helpers import get_time_diff
 
@@ -63,3 +64,6 @@ class Answer(models.Model):
 class Tag(models.Model):
     title = models.CharField(max_length=15, unique=True)
     questions = models.ManyToManyField(Question)
+
+    def __str__(self):
+        return self.title

@@ -1,5 +1,5 @@
 from .models import Question, Answer, Tag
-from users.models import User
+from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404, HttpResponseRedirect
@@ -100,8 +100,9 @@ def save_question(request):
 
 
 def search_tag(request, tag_id):
-    queryset = Tag.objects.get(id=tag_id).questions.all()
-    context = {'queryset': queryset}
+    tag = Tag.objects.get(id=tag_id)
+    queryset = tag.questions.all()
+    context = {'queryset': queryset, 'tag': tag}
     return render(request, 'questions/tag.html', context)
 
 

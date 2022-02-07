@@ -1,6 +1,80 @@
-from django.http import HttpResponse
+from django.shortcuts import render, redirect
+from hasker.helpers import render_with_error
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+
+from .models import Profile
 
 
-# Create your views here.
-def index(request):
-    return HttpResponse("Hello! You are at the Haskell user page")
+def login_page(request, fallback=False):
+    user = request.user
+    context = {'user': user}
+    if not fallback:
+        return render(request, 'users/login.html', context)
+    else:
+        return [request, 'users/login.html', context]
+
+
+def do_login(request):
+    username = request.POST['login']
+    pwd = request.POST['password']
+    user = authenticate(request, username=username, password=pwd)
+    if user:
+        login(request, user)
+        context = {'user': user}
+        return render(request, 'users/profile.html', context)
+    else:
+        return render_with_error(login_page, request, errormsg=(
+            'Username or password is invalid'))
+
+
+def profile(request):
+    user = request.user
+    context = {'user': user}
+    return render(request, 'users/profile.html', context)
+
+
+def signup(request, fallback=False):
+    user = request.user
+    context = {'user': user}
+    if not fallback:
+        return render(request, 'users/signup.html', context)
+    else:
+        return [request, 'users/signup.html', context]
+
+
+def do_signup(request):
+    try:
+        username = request.POST['login']
+        email = request.POST['email']
+        pwd = request.POST['password']
+        pwd_conf = request.POST['password-conf']
+    except KeyError:
+        return render_with_error(signup, request, errormsg=(
+            'Some of the fields are empty'))
+    if Profile.param_exists('username', username):
+        return render_with_error(signup, request, errormsg=(
+            'This username is occupied'))
+    if Profile.param_exists('email', email):
+        return render_with_error(signup, request, errormsg=(
+            'There is a user with this e-mail'))
+    if not pwd == pwd_conf:
+        return render_with_error(signup, request, errormsg=(
+            'Passwords do not match'))
+    new_user = User.objects.create_user(username=username,
+                                        email=email, password=pwd)
+    new_user.save()
+    try:
+        user = authenticate(request, username=new_user, password=pwd)
+    except Exception:
+        return render_with_error(signup, request, errormsg=(
+            'Internal auth error'))
+    context = {'user': new_user}
+    if user is not None:
+        login(request, user)
+        return render(request, 'users/profile.html', context)
+
+
+def do_logout(request):
+    logout(request)
+    return redirect(request.META['HTTP_REFERER'])
