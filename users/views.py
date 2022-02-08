@@ -1,13 +1,8 @@
-import os
-
 from django.shortcuts import render
 from hasker.helpers import render_with_error
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
-from django.conf import settings
-
-from PIL import Image
 
 from .models import Profile
 
@@ -42,23 +37,32 @@ def profile(request, fallback=False):
 
 
 def save_profile(request):
-    if not request.method == 'POST' and request.FILES == 'avatar':
+    context = {'submit_email': '', 'submit_avatar': ''}
+    if not request.method == 'POST':
         return render_with_error(profile, request, errormsg=(
-            'Get wrong form'))
-    avatar = request.FILES['avatar']
-    # email = request.POST['email']
-    fss = FileSystemStorage()
-    file = fss.save(
-        f'{request.user.username}_avatar.{avatar.name.split(".")[-1]}', avatar
-    )
+            'Internal form error. Please try again'))
+    avatar = request.FILES.get('avatar', None)
+    email = request.POST.get('email', None)
     user = User.objects.get(id=request.user.id)
-    """if Profile.param_exists('email', email) and email != user.email:
-        return render_with_error(profile, request, errormsg=(
-            'There is a user with this e-mail'))"""
-    user_profile = Profile.objects.get(user=user)
-    user_profile.avatar = fss.url(file)
-    user_profile.save()
-    context = {}
+    if avatar:
+        fss = FileSystemStorage()
+        file = fss.save(
+            f'{request.user.username}_avatar.{avatar.name.split(".")[-1]}',
+            avatar
+        )
+        user.profile.avatar = fss.url(file)
+        user.profile.save()
+        context['submit_avatar'] = 'new avatar saved'
+    if email:
+        if email == user.email:
+            pass
+        elif Profile.param_exists('email', email):
+            return render_with_error(profile, request, errormsg=(
+                'There is a user with this e-mail'))
+        else:
+            user.email = email
+            user.save()
+            context['submit_email'] = 'new email saved, please reload page'
     return render(request, 'users/profile.html', context)
 
 
@@ -71,23 +75,29 @@ def signup(request, fallback=False):
 
 
 def do_signup(request):
-    try:
-        username = request.POST['login']
-        email = request.POST['email']
-        pwd = request.POST['password']
-        pwd_conf = request.POST['password-conf']
-    except KeyError:
+    if not request.method == 'POST':
+        return render_with_error(profile, request, errormsg=(
+            'Internal form error. Please try again'))
+    username = request.POST.get('login', None)
+    email = request.POST.get('email', None)
+    pwd = request.POST.get('password', None)
+    pwd_conf = request.POST.get('password-conf', None)
+
+    # validation
+    if not all((username, email, pwd, pwd_conf)):
         return render_with_error(signup, request, errormsg=(
-            'Some of the fields are empty'))
+            'Some fields are empty'))
     if Profile.param_exists('username', username):
         return render_with_error(signup, request, errormsg=(
-            'This username is occupied'))
+            f'Username {username} is occupied'))
     if Profile.param_exists('email', email):
         return render_with_error(signup, request, errormsg=(
-            'There is a user with this e-mail'))
+            f'There is a user with e-mail {email}. Is it you?'))
     if not pwd == pwd_conf:
         return render_with_error(signup, request, errormsg=(
             'Passwords do not match'))
+
+    # creation
     new_user = User.objects.create_user(username=username,
                                         email=email, password=pwd)
     new_user.save()
@@ -95,7 +105,7 @@ def do_signup(request):
         user = authenticate(request, username=new_user, password=pwd)
     except Exception:
         return render_with_error(signup, request, errormsg=(
-            'Internal auth error'))
+            'Internal auth error: cannot authenticate new user'))
     context = {'user': new_user}
     if user is not None:
         login(request, user)

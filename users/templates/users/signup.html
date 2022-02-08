@@ -7,7 +7,11 @@
 <div class="container-fluid" style="margin-bottom:30px; margin-top:30px;">
     <form action="{% url 'users:do_signup' %}" method="post">
         {% csrf_token %}
-        {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+        {% if error_message %}
+        <div class="alert alert-warning" role="alert">
+            {{ error_message }}
+        </div>
+        {% endif %}
         <div class="col-7">
             <form>
                 <div class="mb-3">

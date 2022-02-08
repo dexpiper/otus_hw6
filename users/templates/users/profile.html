@@ -6,7 +6,21 @@
 <h3>Setting</h3>
 
 <div class="container-fluid" style="margin-bottom:30px; margin-top:30px;">
-        {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+        {% if error_message %}
+        <div class="alert alert-warning" role="alert">
+            {{ error_message }}
+        </div>
+        {% endif %}
+        {% if submit_email %}
+        <div class="alert alert-success" role="alert">
+            {{ submit_email }}
+        </div>
+        {% endif %}
+        {% if submit_avatar %}
+        <div class="alert alert-success" role="alert">
+            {{ submit_avatar }}
+        </div>
+        {% endif %}
         <div class="row" style="margin-bottom:30px; margin-top:30px;">
             <div class="col-3">
                 <h6>Login</h6>
@@ -25,9 +39,9 @@
             </div>
             <div class="col-5">
                 {% if user.email %}
-                <input class="form-control" type="text" name="email" id="email" value="{{ user.email }}">
+                <input class="form-control" form="input_form" type="text" name="email" id="email" value="{{ user.email }}">
                 {% else %}
-                <input class="form-control" type="text" name="email" id="email" value="example@post.com">
+                <input class="form-control" form="input_form" type="text" name="email" id="email" value="example@post.com">
                 {% endif %}
             </div>
         </div>
@@ -44,7 +58,7 @@
                 {% endif %}
             </div>
         </div>
-    <form action="{% url 'users:save_profile' %}" method="post" enctype="multipart/form-data">
+    <form id="input_form" action="{% url 'users:save_profile' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="row" style="margin-bottom:30px; margin-top:30px;">
             <div class="col-3"></div>
