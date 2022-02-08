@@ -32,9 +32,9 @@
                 </form>
                 {% if user.id %}
                 <form class="form-inline">
-                    {% if user.avatar %}
+                    {% if user.profile.avatar %}
                     <!-- USER AVATAR -->
-                    <img src="#" alt="User avatar" width="100" height="100" style="margin-right:15px;">
+                    <img src="{{ user.profile.avatar }}" class="rounded-circle" alt="User avatar" width="70" height="70" style="margin-right:15px;">
                     {% else %}
                     <img src="{% static 'users/userpic.png' %}" alt="Default avatar" width="70" height="70" style="margin-right:15px;">
                     {% endif %}
