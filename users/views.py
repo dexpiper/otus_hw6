@@ -1,14 +1,16 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from hasker.helpers import render_with_error
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
+from django.core.files.storage import FileSystemStorage
+
+from PIL import Image
 
 from .models import Profile
 
 
 def login_page(request, fallback=False):
-    user = request.user
-    context = {'user': user}
+    context = {}
     if not fallback:
         return render(request, 'users/login.html', context)
     else:
@@ -28,15 +30,40 @@ def do_login(request):
             'Username or password is invalid'))
 
 
-def profile(request):
-    user = request.user
-    context = {'user': user}
+def profile(request, fallback=False):
+    context = {}
+    if not fallback:
+        return render(request, 'users/profile.html', context)
+    else:
+        return [request, 'users/profile.html', context]
+
+
+def save_profile(request):
+    if not request.method == 'POST' and request.FILES == 'avatar':
+        return render_with_error(profile, request, errormsg=(
+            'Get wrong form'))
+    avatar = request.FILES['avatar']
+    # email = request.POST['email']
+    fss = FileSystemStorage()
+    file = fss.save(f'{request.user.username}_avatar', avatar)
+    file_url = fss.url(file)
+    print(' *** ')
+    print(file_url)
+    print(' *** ')
+    user = User.objects.get(id=request.user.id)
+    """if Profile.param_exists('email', email) and email != user.email:
+        return render_with_error(profile, request, errormsg=(
+            'There is a user with this e-mail'))"""
+    im = Image.open(file_url)
+    im.thumbnail((128, 128))
+    user.avatar = im
+    user.save()
+    context = {}
     return render(request, 'users/profile.html', context)
 
 
 def signup(request, fallback=False):
-    user = request.user
-    context = {'user': user}
+    context = {}
     if not fallback:
         return render(request, 'users/signup.html', context)
     else:
@@ -77,4 +104,4 @@ def do_signup(request):
 
 def do_logout(request):
     logout(request)
-    return redirect(request.META['HTTP_REFERER'])
+    return render(request, 'questions/index.html', {})

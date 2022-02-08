@@ -6,7 +6,6 @@
 <h3>Setting</h3>
 
 <div class="container-fluid" style="margin-bottom:30px; margin-top:30px;">
-    <form action="#" method="post">
         {% csrf_token %}
         {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
         <div class="row" style="margin-bottom:30px; margin-top:30px;">
@@ -27,9 +26,9 @@
             </div>
             <div class="col-5">
                 {% if user.email %}
-                <input class="form-control" type="text" value="{{ user.email }}">
+                <input class="form-control" type="text" name="email" id="email" value="{{ user.email }}">
                 {% else %}
-                <input class="form-control" type="text" value="example@post.com">
+                <input class="form-control" type="text" name="email" id="email" value="example@post.com">
                 {% endif %}
             </div>
         </div>
@@ -46,12 +45,13 @@
                 {% endif %}
             </div>
         </div>
+    <form action="{% url 'users:save_profile' %}" method="post" enctype="multipart/form-data">
         <div class="row" style="margin-bottom:30px; margin-top:30px;">
             <div class="col-3"></div>
             <div class="col-5">
                 <div class="mb-3">
-                    <label for="file" class="form-label">Upload your avatar:</label>
-                    <input class="form-control" type="file" id="file">
+                    <label for="avatar" class="form-label">Upload your avatar:</label>
+                    <input class="form-control" type="file" id="avatar" name="avatar" accept="image/*">
                 </div>
                 <button type="submit" class="btn btn-primary">Save</button>
             </div>
