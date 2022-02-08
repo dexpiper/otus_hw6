@@ -131,7 +131,11 @@
 <legend><h3>Your answer:</h3></legend>
 <form action="{% url 'questions:answer' question.id %}" method="post" style="margin-bottom:40px;">
   {% csrf_token %}
-  {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+  {% if error_message %}
+  <div class="alert alert-warning" role="alert">
+      {{ error_message }}
+  </div>
+  {% endif %}
   <p><textarea cols="70" rows="5" name="answer_text"></textarea></p>
   <input type="submit" class="btn btn-primary" value="Submit">
   <input type="reset" class="btn btn-secondary" value="Clear">

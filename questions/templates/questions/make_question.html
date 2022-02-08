@@ -9,7 +9,11 @@
   <legend><h2 style="margin-bottom:20px;">Ask your question</h2></legend>
   
   {% csrf_token %}
-  {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+  {% if error_message %}
+  <div class="alert alert-warning" role="alert">
+      {{ error_message }}
+  </div>
+  {% endif %}
 
   <div class="mb-3">
     <label for="username" class="form-label">Username:</label>
