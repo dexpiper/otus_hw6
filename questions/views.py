@@ -1,11 +1,10 @@
 from .models import Question, Answer, Tag
-from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse
 
-#  from django.http import HttpResponse
+from hasker.helpers import render_with_error
 
 
 def index(request):
@@ -44,6 +43,9 @@ def question(request, question_id, fallback=False):
 
 
 def answer_question(request, question_id):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(
+            reverse('users:login', args=()))
     qw = Question.objects.get(pk=question_id)
     try:
         answer_text = request.POST['answer_text']
@@ -52,35 +54,44 @@ def answer_question(request, question_id):
         r[2].update({'error_message': 'Error occured! Try again please'})
         return render(request=r[0], template_name=r[1], context=r[2])
     else:
-        answer = Answer(author=User.objects.get(username='Sammy'), question=qw,
+        answer = Answer(author=request.user, question=qw,
                         content=answer_text)
         answer.save()
         return HttpResponseRedirect(
             reverse('questions:question', args=(qw.id,)))
 
 
-def make_question(request):
-    return render(request, 'questions/make_question.html')
+def make_question(request, fallback=False):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(
+            reverse('users:login', args=()))
+    if not fallback:
+        return render(request, 'questions/make_question.html', {})
+    else:
+        return [request, 'questions/make_question.html', {}]
 
 
 def save_question(request):
-    try:
-        username = request.POST['username']
-        question_title = request.POST['title']
-        question_content = request.POST['content']
-        question_tags = request.POST['tags'].split()
-    except (KeyError, ObjectDoesNotExist):
-        raise
+    question_title = request.POST.get('title', None)
+    question_content = request.POST.get('content', None)
+    question_tags = request.POST.get('tags', None)
+    if not all((question_title, question_content)):
+        return render_with_error(
+            make_question, request,
+            errormsg='Please fill in both title and content'
+        )
     try:
         question = Question(
-            author=User.objects.get(username=username),
+            author=request.user,
             title=question_title,
             content=question_content
         )
         question.save()
     except ObjectDoesNotExist:
-        raise
+        return render_with_error(make_question, request,
+                                 errormsg='Internal error, please try again')
     if question_tags:
+        question_tags = question_tags.split()
         for tag in question_tags:
             tag = tag.strip()
             try:
@@ -94,7 +105,10 @@ def save_question(request):
                 t = Tag.objects.create(title=tag)
                 t.questions.add(question)
             except (KeyError, TypeError, ObjectDoesNotExist):
-                raise
+                return render_with_error(
+                    make_question, request,
+                    errormsg='Error with tag creation. Please try again.'
+                )
     return HttpResponseRedirect(
         reverse('questions:question', args=(question.id,)))
 
@@ -107,8 +121,15 @@ def search_tag(request, tag_id):
 
 
 def alter_flag(request, answer_id):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(
+            reverse('users:login', args=()))
     answer = Answer.objects.get(pk=answer_id)
     qw = answer.question
+    if not qw.author.id == request.user.id:
+        return HttpResponseRedirect(request.META['HTTP_REFERER'])
+    if qw.author.id == answer.author.id:
+        return HttpResponseRedirect(request.META['HTTP_REFERER'])
     if answer.answer_flag == 1:
         answer.answer_flag = 0
         qw.status = 0
@@ -130,8 +151,12 @@ def alter_flag(request, answer_id):
 
 
 def answer_vote(request, answer_id, upvote=1):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(
+            reverse('users:login', args=()))
     answer = Answer.objects.get(pk=answer_id)
-    # TODO User check
+    if answer.author.id == request.user.id:
+        return HttpResponseRedirect(request.META['HTTP_REFERER'])
     if upvote:
         answer.votes += 1
     else:
@@ -141,7 +166,12 @@ def answer_vote(request, answer_id, upvote=1):
 
 
 def question_vote(request, question_id, upvote=1):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(
+            reverse('users:login', args=()))
     qw = Question.objects.get(pk=question_id)
+    if qw.author.id == request.user.id:
+        return HttpResponseRedirect(request.META['HTTP_REFERER'])
     # TODO User check
     if upvote:
         qw.votes += 1

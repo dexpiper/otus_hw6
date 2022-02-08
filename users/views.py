@@ -29,6 +29,8 @@ def do_login(request):
 
 
 def profile(request, fallback=False):
+    if not request.user.is_authenticated:
+        render_with_error(do_login, request, errormsg='Please log in')
     context = {}
     if not fallback:
         return render(request, 'users/profile.html', context)
