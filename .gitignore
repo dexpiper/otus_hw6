@@ -63,3 +63,6 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+
+# misc
+.todo.txt
