@@ -69,15 +69,9 @@ def question(request, question_id, fallback=False):
         qw = Question.objects.get(pk=question_id)
     except Question.DoesNotExist:
         raise Http404('No such question :(')
-    try:
-        answer_query = Answer.objects.filter(question=question_id).order_by(
+    answer_query = Answer.objects.filter(question=question_id).order_by(
             '-votes', '-answer_flag')
-    except ObjectDoesNotExist:
-        answer_query = None
-    try:
-        tags = Tag.objects.filter(questions=question_id)
-    except ObjectDoesNotExist:
-        pass
+    tags = Tag.objects.filter(questions=question_id)
     context = {
         'question': qw, 'answer_query': answer_query, 'tags': tags
     }
