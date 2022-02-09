@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from .models import Question, Answer, Tag, QuestionVoters, AnswerVoters
 
 from hasker.helpers import render_with_error
+from hasker.signals import question_answered
 
 
 def index(request, pages=20):
@@ -101,6 +102,7 @@ def answer_question(request, question_id):
         answer = Answer(author=request.user, question=qw,
                         content=answer_text)
         answer.save()
+        question_answered.send(sender=answer_question, qw_author=qw.author)
         return HttpResponseRedirect(
             reverse('questions:question', args=(qw.id,)))
 

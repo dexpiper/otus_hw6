@@ -48,6 +48,7 @@ def save_profile(request):
             'Internal form error. Please try again'))
     avatar = request.FILES.get('avatar', None)
     email = request.POST.get('email', None)
+    email_alerts_status = request.POST.get('alerts', None)
     user = User.objects.get(id=request.user.id)
     if avatar:
         fss = FileSystemStorage()
@@ -68,6 +69,14 @@ def save_profile(request):
             user.email = email
             user.save()
             context['submit_email'] = 'new email saved, please reload page'
+    if email_alerts_status is not None:
+        if email_alerts_status == 'on':
+            email_alerts_status = True
+        else:
+            email_alerts_status = False
+        user.profile.send_email = email_alerts_status
+        user.profile.save()
+        context['submit_alert'] = 'email alerts changed'
     return render(request, 'users/profile.html', context)
 
 
