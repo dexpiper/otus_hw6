@@ -1,4 +1,4 @@
-from .models import Question, Answer, Tag
+from .models import Question, Answer, Tag, QuestionVoters, AnswerVoters
 from django.shortcuts import render
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404, HttpResponseRedirect
@@ -80,16 +80,12 @@ def save_question(request):
             make_question, request,
             errormsg='Please fill in both title and content'
         )
-    try:
-        question = Question(
+    question = Question(
             author=request.user,
             title=question_title,
             content=question_content
         )
-        question.save()
-    except ObjectDoesNotExist:
-        return render_with_error(make_question, request,
-                                 errormsg='Internal error, please try again')
+    question.save()
     if question_tags:
         question_tags = question_tags.split()
         for tag in question_tags:
@@ -157,10 +153,29 @@ def answer_vote(request, answer_id, upvote=1):
     answer = Answer.objects.get(pk=answer_id)
     if answer.author.id == request.user.id:
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
-    if upvote:
-        answer.votes += 1
+
+    voters_number = AnswerVoters.objects.filter(
+        entity_id=answer, user_id=request.user).count()
+    if not voters_number:
+        user_vote = AnswerVoters(entity_id=answer,
+                                 user_id=request.user)
     else:
-        answer.votes -= 1
+        user_vote = AnswerVoters.objects.get(
+            entity_id=answer, user_id=request.user)
+    if upvote:
+        if user_vote.vote in (0, -1):
+            answer.votes += 1
+            user_vote.vote += 1
+            user_vote.save()
+        else:
+            return HttpResponseRedirect(request.META['HTTP_REFERER'])
+    else:
+        if user_vote.vote in (0, 1):
+            answer.votes -= 1
+            user_vote.vote -= 1
+            user_vote.save()
+        else:
+            return HttpResponseRedirect(request.META['HTTP_REFERER'])
     answer.save()
     return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
@@ -172,10 +187,28 @@ def question_vote(request, question_id, upvote=1):
     qw = Question.objects.get(pk=question_id)
     if qw.author.id == request.user.id:
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
-    # TODO User check
-    if upvote:
-        qw.votes += 1
+
+    voters_number = QuestionVoters.objects.filter(
+        entity_id=question_id, user_id=request.user).count()
+    if not voters_number:
+        user_vote = QuestionVoters(entity_id=qw,
+                                   user_id=request.user)
     else:
-        qw.votes -= 1
+        user_vote = QuestionVoters.objects.get(
+            entity_id=qw, user_id=request.user)
+    if upvote:
+        if user_vote.vote in (0, -1):
+            qw.votes += 1
+            user_vote.vote += 1
+            user_vote.save()
+        else:
+            return HttpResponseRedirect(request.META['HTTP_REFERER'])
+    else:
+        if user_vote.vote in (0, 1):
+            qw.votes -= 1
+            user_vote.vote -= 1
+            user_vote.save()
+        else:
+            return HttpResponseRedirect(request.META['HTTP_REFERER'])
     qw.save()
     return HttpResponseRedirect(request.META['HTTP_REFERER'])

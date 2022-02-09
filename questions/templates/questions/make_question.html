@@ -25,14 +25,7 @@
   </div>
   <div class="mb-3">
     <label for="tags" class="form-label">Tags:</label>
-    <input class="form-control" list="datalistOptions" id="tags" name="tags" placeholder="Type your tags here"></input>
-    <datalist id="datalistOptions">
-      {% if tags %}
-      {% for tag in tags %}
-      <option value="{{ tag }}">
-        {% endfor %}
-      {% endif %}
-    </datalist>
+    <input class="form-control" id="tags" name="tags" placeholder="Type your tags here"></input>
     <div id="tagsHelp" class="form-text">Please provide up to 3 one-word tags separated by spaces</div>
   </div>
   <input type="submit" class="btn btn-primary" value="Submit"></input>

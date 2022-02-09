@@ -15,8 +15,13 @@ ANSWER_STATUS = (
     (1, 'Right_answer')
 )
 
+VOTE_STATUS = (
+    (-1, 'Downvote'),
+    (0, 'No_vote'),
+    (1, 'Upvote')
+)
 
-# Create your models here.
+
 class Question(models.Model):
     title = models.CharField(max_length=200, unique=True)
     author = models.ForeignKey(sett.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -67,3 +72,15 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class QuestionVoters(models.Model):
+    entity_id = models.ForeignKey(Question, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(sett.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    vote = models.IntegerField(choices=VOTE_STATUS, default=0)
+
+
+class AnswerVoters(models.Model):
+    entity_id = models.ForeignKey(Answer, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(sett.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    vote = models.IntegerField(choices=VOTE_STATUS, default=0)
