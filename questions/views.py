@@ -3,25 +3,38 @@ from django.shortcuts import render
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse
+from django.core.paginator import Paginator
 
 from .models import Question, Answer, Tag, QuestionVoters, AnswerVoters
 
 from hasker.helpers import render_with_error
 
 
-def index(request):
+def index(request, pages=20):
     queryset = Question.objects.all().order_by('-created_on', 'title')
-    context = {'queryset': queryset, 'trending': Question.trending()}
+    paginator = Paginator(queryset, pages)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'trending': Question.trending(),
+        'page_obj': page_obj
+    }
     return render(request, 'questions/index.html', context)
 
 
-def index_hot(request):
+def index_hot(request, pages=20):
     queryset = Question.objects.all().order_by('-votes', 'title')
-    context = {'queryset': queryset, 'trending': Question.trending()}
+    paginator = Paginator(queryset, pages)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'trending': Question.trending(),
+        'page_obj': page_obj
+    }
     return render(request, 'questions/hot_questions.html', context)
 
 
-def index_search(request):
+def index_search(request, pages=20):
     search: str = request.POST.get('search', None)
     if search.startswith('tag:'):
         tag_name = search[4:].strip()
@@ -39,7 +52,14 @@ def index_search(request):
           | Q(content__icontains=search)                        # noqa E131
           | Q(answer__content__icontains=search)                # noqa E131
         ).distinct().order_by('-votes', '-created_on')
-    context = {'queryset': queryset, 'trending': Question.trending()}
+    paginator = Paginator(queryset, pages)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'trending': Question.trending(),
+        'page_obj': page_obj,
+        'searchstring': search
+    }
     return render(request, 'questions/search.html', context)
 
 
@@ -96,22 +116,41 @@ def make_question(request, fallback=False):
 
 
 def save_question(request):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(
+            reverse('users:login', args=()))
     question_title = request.POST.get('title', None)
     question_content = request.POST.get('content', None)
     question_tags = request.POST.get('tags', None)
+    question_id = request.POST.get('question_id', None)  # normally None
     if not all((question_title, question_content)):
-        return render_with_error(
-            make_question, request,
-            errormsg='Please fill in both title and content'
-        )
-    question = Question(
-            author=request.user,
-            title=question_title,
-            content=question_content
-        )
-    question.save()
+        return render_with_error(make_question, request,
+                                 errormsg='Please fill in title and content',
+                                 question_id=question_id or None,
+                                 question_title=question_title,
+                                 question_content=question_content)
+    if question_id:
+        question = Question.objects.get(pk=question_id)
+        question.title = question_title
+        question.content = question_content
+        question.save()
+    else:
+        question = Question(
+                author=request.user,
+                title=question_title,
+                content=question_content
+            )
+        question.save()
     if question_tags:
         question_tags = question_tags.split()
+        if len(question_tags) > 3:
+            return render_with_error(
+                make_question, request,
+                errormsg='You can only provide up to 3 tags',
+                question_title=question_title,
+                question_content=question_content,
+                question_id=question.id
+            )
         for tag in question_tags:
             tag = tag.strip()
             try:
@@ -124,7 +163,7 @@ def save_question(request):
             try:
                 t = Tag.objects.create(title=tag)
                 t.questions.add(question)
-            except (KeyError, TypeError, ObjectDoesNotExist):
+            except (KeyError, TypeError, ValueError, ObjectDoesNotExist):
                 return render_with_error(
                     make_question, request,
                     errormsg='Error with tag creation. Please try again.'
@@ -133,10 +172,17 @@ def save_question(request):
         reverse('questions:question', args=(question.id,)))
 
 
-def search_tag(request, tag_id):
+def search_tag(request, tag_id, pages=20):
     tag = Tag.objects.get(id=tag_id)
     queryset = tag.questions.all()
-    context = {'queryset': queryset, 'tag': tag}
+    paginator = Paginator(queryset, pages)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'trending': Question.trending(),
+        'page_obj': page_obj,
+        'tag': tag
+    }
     return render(request, 'questions/tag.html', context)
 
 

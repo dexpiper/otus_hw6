@@ -14,14 +14,13 @@
       {{ error_message }}
   </div>
   {% endif %}
-
   <div class="mb-3">
     <label for="title" class="form-label">Title:</label>
     <input type="text" class="form-control" name="title" id="title" placeholder="Question title"></input>
   </div>
   <div class="mb-3">
     <label for="content" class="form-label">Your question:</label>
-    <textarea class="form-control" id="content" name="content" rows="6" placeholder="Your question"></textarea>
+    <textarea class="form-control" id="content" name="content" rows="6" placeholder="Your question">{{ question_content }}</textarea>
   </div>
   <div class="mb-3">
     <label for="tags" class="form-label">Tags:</label>
@@ -30,6 +29,9 @@
   </div>
   <input type="submit" class="btn btn-primary" value="Submit"></input>
   <input type="reset" class="btn btn-secondary" value="Clear"></input>
+  {% if question_id %}
+  <div class="invisible"><input type="text" name="question_id" id="question_id" readonly>{{ question_id }}</input></div>
+  {% endif %}
 </form>
 
 {% endblock %}

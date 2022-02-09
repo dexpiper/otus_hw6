@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}<title>Hasker - index</title>{% endblock %}
+
+{% block content %}
+{% load static %}
+
+{% block qw_navigate %}
+{% endblock %}
+
+
+{% if page_obj %}
+
+    {% for question in page_obj %}
+        
+          <div class="card border-light mb-3" style="max-width: 60rem; margin-top:5px; margin-bottom:5px;">
+
+            <div class="card-header">
+              <div class="text-muted">id #{{ question.id }}
+              {% if question.status == 1 %}
+              <img src="{% static 'questions/accept.png' %}" alt="Answered" width="20" height="20">
+              {% elif question.status == 0 and question.number_answers == 0 %}
+              <img src="{% static 'questions/question.png' %}" alt="No answer yet" width="20" height="20">
+              {% endif %}
+              </div>
+            </div>
+
+            <div class="card-body">
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-1">
+                    <div class="row">{{ question.votes }}</div>
+                    <div class="row">Votes</div>
+                  </div>
+                  <div class="col-1">
+                    <div class="row">{{ question.number_answers }}</div>
+                    <div class="row">Answers</div>
+                  </div>
+                  <div class="col-7" style="margin-left: 10px;">
+                    <a href="{% url 'questions:question' question.id %}" class="card-block stretched-link text-decoration-none" style="text-decoration: none;">
+                    <h5 class="card-title">
+                      {{ question.title }}
+                    </h5>
+                    </a>
+                    <p class="card-text">
+                      {% for tag in question.tags %}
+                      <a href="{% url 'questions:searchtag' tag.id %}" class="badge badge-info text-wrap">{{ tag.title }}</a>
+                      {% endfor %}
+                    </p>
+                  </div>
+                  <div class="col-2" style="margin-left: 5px;">
+                    <div class="row">
+                      <p><a href="#" class="text-primary">{{ question.author }}</a></p>
+                    </div>
+                    <div class="row">
+                      <p class="text-secondary">{{ question.asked_ago }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+    {% endfor %}
+
+    <!-- PAGE NAVIGATION -->
+
+    <nav aria-label="Page navigation">
+      <ul class="pagination">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" tabindex="-1">Previous</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1">Previous</a>
+              </li>
+            {% endif %}
+            {% for i in page_obj.paginator.page_range %}
+            {% if page_obj.number == i %}
+              <li class="page-item active">
+                <span class="page-link">
+                  {{ i }}
+                  <span class="sr-only">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                </span>
+              </li>
+            {% else %}
+            <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+            {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+              </li>
+            {% endif %}
+      </ul>
+    </nav>
+
+    {% else %}
+    <div class="card border-light mb-3" style="max-width: 60rem; margin-top:20px; margin-bottom:5px; margin-left:20px;">
+        <h4>No questions are available.</h4>
+    </div>
+    {% endif %}
+
+
+{% endblock %}

@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from hasker.helpers import render_with_error
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -8,11 +8,14 @@ from .models import Profile
 
 
 def login_page(request, fallback=False):
-    context = {}
-    if not fallback:
-        return render(request, 'users/login.html', context)
+    if not request.user.is_authenticated:
+        context = {}
+        if not fallback:
+            return render(request, 'users/login.html', context)
+        else:
+            return [request, 'users/login.html', context]
     else:
-        return [request, 'users/login.html', context]
+        return redirect('users:profile')
 
 
 def do_login(request):

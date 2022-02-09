@@ -54,7 +54,7 @@ class Question(models.Model):
     @classmethod
     def trending(cls):
         queryset = cls.objects.all().order_by('-votes')
-        return queryset[:6]
+        return queryset[:20]
 
 
 class Answer(models.Model):
