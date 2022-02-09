@@ -1,15 +1,17 @@
-from .models import Question, Answer, Tag, QuestionVoters, AnswerVoters
+from django.db.models import Q
 from django.shortcuts import render
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse
+
+from .models import Question, Answer, Tag, QuestionVoters, AnswerVoters
 
 from hasker.helpers import render_with_error
 
 
 def index(request):
     queryset = Question.objects.all().order_by('-created_on', 'title')
-    context = {'queryset': queryset, 'trending': Question.trending}
+    context = {'queryset': queryset, 'trending': Question.trending()}
     return render(request, 'questions/index.html', context)
 
 
@@ -17,6 +19,28 @@ def index_hot(request):
     queryset = Question.objects.all().order_by('-votes', 'title')
     context = {'queryset': queryset, 'trending': Question.trending()}
     return render(request, 'questions/hot_questions.html', context)
+
+
+def index_search(request):
+    search: str = request.POST.get('search', None)
+    if search.startswith('tag:'):
+        tag_name = search[4:].strip()
+        try:
+            tag = Tag.objects.get(title=tag_name)
+        except ObjectDoesNotExist:
+            context = {'error_message': f'No tag {tag_name} found',
+                       'trending': Question.trending()}
+            return render(request, 'questions/search.html', context)
+        return search_tag(request, tag_id=tag.id)
+    if len(search) > 30:
+        search = search[:30]
+    queryset = Question.objects.select_related().filter(
+            Q(title__icontains=search)
+          | Q(content__icontains=search)                        # noqa E131
+          | Q(answer__content__icontains=search)                # noqa E131
+        ).distinct().order_by('-votes', '-created_on')
+    context = {'queryset': queryset, 'trending': Question.trending()}
+    return render(request, 'questions/search.html', context)
 
 
 def question(request, question_id, fallback=False):

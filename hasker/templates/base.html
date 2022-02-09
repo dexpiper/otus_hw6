@@ -25,9 +25,10 @@
                 <span class="navbar-text">
                     Poor-man stackoverflow
                 </span>
-                <form class="form-inline">
+                <form class="form-inline" action="{% url 'questions:search' %}" method="post">
+                    {% csrf_token %}
                     <!-- Search -->
-                    <input class="form-control form-control-sm mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+                    <input class="form-control form-control-sm mr-sm-2" type="search" name="search" placeholder="Search" aria-label="Search">
                     <button class="btn btn-sm btn-outline-secondary btn-sm mr-sm-2" type="submit">Search</button>
                 </form>
                 {% if user.id %}
