@@ -96,7 +96,7 @@ def answer_question(request, question_id):
         answer = Answer(author=request.user, question=qw,
                         content=answer_text)
         answer.save()
-        question_answered.send(sender=answer_question, qw_author=qw.author)
+        question_answered.send(sender=answer_question, question=qw)
         return HttpResponseRedirect(
             reverse('questions:question', args=(qw.id,)))
 
