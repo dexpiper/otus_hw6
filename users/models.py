@@ -19,9 +19,15 @@ class Profile(models.Model):
         instance.profile.save()
 
     @classmethod
-    def param_exists(cls, param: str, arg):
+    def param_exists(cls, param: str, value) -> bool:
+        """
+        Check if there is a User in db who has
+        a <param> set to <value>.
+        Usage:
+        * Profile.param_exists('email', 'alice@yaboo.net')
+        """
         try:
-            dct = {param: arg}
+            dct = {param: value}
             User.objects.get(**dct)
         except User.DoesNotExist:
             return False
