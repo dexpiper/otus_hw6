@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
+from django.contrib import auth
 
 
 class TestSignUp(TestCase):
@@ -15,7 +16,7 @@ class TestSignUp(TestCase):
             # no error message should be shown
             response.context['error_message']
 
-    def test_sign_up_view(self):
+    def test_sign_up_controller(self):
         """
         Alice enters her credentials and is redirected
         to her brand-new profile page
@@ -148,3 +149,108 @@ class TestSignUp(TestCase):
                     'Some fields are empty',
                     response.context['error_message']
                 )
+
+    def test_logged_user_cannot_signup(self):
+        """
+        Already-logged-in Alice tries to see signup page
+        """
+        alice = User.objects.create_user(
+            username='alice',
+            email='alice@wonderland.com'
+        )
+        alice.set_password('alicepass')
+        alice.save()
+        self.client.login(username='alice', password='alicepass')
+        self.assertEqual(auth.get_user(self.client), alice)
+        self.assertTrue(auth.get_user(self.client).is_authenticated)
+        response = self.client.get('/users/signup')
+        self.assertRedirects(response, '/users/profile')
+
+
+class TestLogIn(TestCase):
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.alice = User.objects.create_user(
+            username='alice',
+            email='alice@wonderland.com',
+            password='alicepass'
+        )
+        cls.alice.save()
+
+    def test_log_in_page(self):
+        response = self.client.get('/users/login')
+        self.assertTemplateUsed(response, 'users/login.html')
+        with self.assertRaises(KeyError):
+            # no error message should be shown
+            response.context['error_message']
+
+    def test_log_in_controller(self):
+        response = self.client.post(
+            '/users/do_login',
+            {
+                'login': 'alice',
+                'password': 'alicepass'
+            }
+        )
+        self.assertEqual(auth.get_user(self.client), self.alice)
+        self.assertTrue(auth.get_user(self.client).is_authenticated)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'users/profile.html')
+        self.assertEqual(response.context['user'], self.alice)
+
+    def test_bad_login_credentials(self):
+        for dct in (
+            {
+                'login': 'alice',
+                'password': ''
+            },
+            {
+                'login': '',
+                'password': 'alicepass'
+            },
+            {
+                'login': 'foobar',
+                'password': 'alicepass'
+            },
+            {
+                'login': 'alice',
+                'password': 'foobar'
+            },
+            {
+                'login': '',
+                'password': ''
+            },
+
+        ):
+            with self.subTest(dct=dct):
+                response = self.client.post(
+                    '/users/do_login',
+                    dct
+                )
+                self.assertTemplateNotUsed(response, 'users/profile.html')
+                self.assertTemplateUsed(response, 'users/login.html')
+                self.assertIn(
+                    'Username or password are invalid',
+                    response.context['error_message']
+                )
+
+
+class TestProfile(TestCase):
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.alice = User.objects.create_user(
+            username='alice',
+            email='alice@wonderland.com',
+            password='alicepass'
+        )
+        cls.alice.save()
+
+    def test_profile_page(self):
+        self.client.force_login(self.alice)
+        response = self.client.get('/users/profile')
+        self.assertTemplateUsed(response, 'users/profile.html')
+        with self.assertRaises(KeyError):
+            # no error message should be shown
+            response.context['error_message']

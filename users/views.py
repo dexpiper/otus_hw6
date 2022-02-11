@@ -3,6 +3,8 @@ from hasker.helpers import render_with_error
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 
 from .models import Profile
 
@@ -28,7 +30,7 @@ def do_login(request):
         return render(request, 'users/profile.html', context)
     else:
         return render_with_error(login_page, request, errormsg=(
-            'Username or password is invalid'))
+            'Username or password are invalid'))
 
 
 def profile(request, fallback=False):
@@ -81,6 +83,9 @@ def save_profile(request):
 
 
 def signup(request, fallback=False):
+    if request.user.is_authenticated:
+        return HttpResponseRedirect(
+            reverse('users:profile', args=()))
     context = {}
     if not fallback:
         return render(request, 'users/signup.html', context)
@@ -89,6 +94,9 @@ def signup(request, fallback=False):
 
 
 def do_signup(request):
+    if request.user.is_authenticated:
+        return HttpResponseRedirect(
+            reverse('users:profile', args=()))
     if not request.method == 'POST':
         return render_with_error(profile, request, errormsg=(
             'Internal form error. Please try again'))
@@ -120,7 +128,7 @@ def do_signup(request):
     except Exception:
         return render_with_error(signup, request, errormsg=(
             'Internal auth error: cannot authenticate new user'))
-    context = {'user': new_user}
+    context = {'user': user}
     if user is not None:
         login(request, user)
         return render(request, 'users/profile.html', context)
