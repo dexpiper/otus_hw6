@@ -246,11 +246,41 @@ class TestProfile(TestCase):
             password='alicepass'
         )
         cls.alice.save()
+        cls.bob = User.objects.create_user(
+            username='bob',
+            email='bob@yagoo.org',
+            password='bobpass'
+        )
+        cls.bob.save()
 
     def test_profile_page(self):
+        for usr in (self.alice, self.bob):
+            with self.subTest(usr=usr):
+                self.client.force_login(usr)
+                response = self.client.get('/users/profile')
+                self.assertTemplateUsed(response, 'users/profile.html')
+                with self.assertRaises(KeyError):
+                    # no error message should be shown
+                    response.context['error_message']
+                    response.context['submit_email']
+                    response.context['submit_avatar']
+                    response.context['submit_alert']
+                self.assertEqual(response.context['user'], usr)
+
+    def test_profile_logic(self):
         self.client.force_login(self.alice)
-        response = self.client.get('/users/profile')
-        self.assertTemplateUsed(response, 'users/profile.html')
-        with self.assertRaises(KeyError):
-            # no error message should be shown
-            response.context['error_message']
+        with open('users/tests/fixtures/my_best_photo.jpg', 'rb') as image:
+            response = self.client.post(
+                    '/users/save_profile',
+                    {
+                        'avatar': image,
+                        'alerts': 'on',
+                        'email': 'newalice@wonderland.com'
+                    },
+                    format='multipart'
+                )
+        self.assertEqual(response.status_code, 302)
+        alice_updated = User.objects.get(username='alice')
+        self.assertEqual(alice_updated.profile.send_email, True)
+        self.assertEqual(alice_updated.email, 'newalice@wonderland.com')
+        self.assertIsNotNone(alice_updated.profile.avatar)

@@ -68,15 +68,16 @@
                 <h6>Email alerts</h6>
             </div>
             <div class="col-5">
-                <div class="form-check form-switch">
+                <div class="form-check">
                     <!-- EMAIL alerts -->
-                    <input class="form-check-input" type="checkbox" id="flexSwitchCheck"
+                    <input type="hidden" name="alerts" form="input_form" value="off">
+                    <input class="form-check-input" type="checkbox" id="flexcheck"
                         name="alerts" form="input_form"
                         {% if user.profile.send_email %}
                             checked
                         {% endif %}
                         >
-                    <label class="form-check-label" for="flexSwitchCheck">Send email notifications about new answers for my questions</label>
+                    <label class="form-check-label" for="flexcheck">Send email notifications about new answers for my questions</label>
                   </div>
             </div>
         </div>

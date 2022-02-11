@@ -44,7 +44,7 @@ def profile(request, fallback=False):
 
 
 def save_profile(request):
-    context = {'submit_email': '', 'submit_avatar': ''}
+    context = {}
     if not request.method == 'POST':
         return render_with_error(profile, request, errormsg=(
             'Internal form error. Please try again'))
@@ -73,13 +73,13 @@ def save_profile(request):
             context['submit_email'] = 'new email saved, please reload page'
     if email_alerts_status is not None:
         if email_alerts_status == 'on':
-            email_alerts_status = True
+            user.profile.send_email = True
         else:
-            email_alerts_status = False
-        user.profile.send_email = email_alerts_status
+            user.profile.send_email = False
         user.profile.save()
         context['submit_alert'] = 'email alerts changed'
-    return render(request, 'users/profile.html', context)
+    return HttpResponseRedirect(
+            reverse('users:profile', args=()))
 
 
 def signup(request, fallback=False):
