@@ -74,12 +74,10 @@
                 <div class="form-check">
                     <!-- EMAIL alerts -->
                     <h3>{{ form.alerts.value }}</h3>
-                    <input type="hidden" name="{{ form.alerts.html_name }}" form="input_form" value="off">
+                    <input type="hidden" name="{{ form.alerts.html_name }}" form="input_form">
                     <input class="form-check-input" type="checkbox" id="{{ form.alerts.id_for_label }}"
                         name="{{ form.alerts.html_name }}" form="input_form"
-                        {% if form.alerts.value == True %}
-                            checked
-                        {% elif form.alerts.value == 'on' %}
+                        {% if form.alerts.value %}
                             checked
                         {% endif %}
                         >
