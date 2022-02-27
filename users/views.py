@@ -1,85 +1,53 @@
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 from hasker.helpers import render_with_error
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.files.storage import FileSystemStorage
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.contrib.auth.views import LoginView, LogoutView
 
 from .models import Profile
+from .forms import ProfileForm
+from .helpers import save_avatar, update_email, update_alerts
 
 
-def login_page(request, fallback=False):
-    if not request.user.is_authenticated:
-        context = {}
-        if not fallback:
-            return render(request, 'users/login.html', context)
-        else:
-            return [request, 'users/login.html', context]
-    else:
-        return redirect('users:profile')
+class Login(LoginView):
+    template_name = 'users/login.html'
 
 
-def do_login(request):
-    username = request.POST['login']
-    pwd = request.POST['password']
-    user = authenticate(request, username=username, password=pwd)
-    if user:
-        login(request, user)
-        context = {'user': user}
-        return render(request, 'users/profile.html', context)
-    else:
-        return render_with_error(login_page, request, errormsg=(
-            'Username or password are invalid'))
+class Logout(LogoutView):
+    template_name = 'users/logged_out.html'
 
 
-def profile(request, fallback=False):
-    if not request.user.is_authenticated:
-        render_with_error(do_login, request, errormsg='Please log in')
+@login_required
+def profile(request):
     context = {}
-    if not fallback:
-        return render(request, 'users/profile.html', context)
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, user=request.user)
+        if form.is_valid():
+            avatar = request.FILES.get('avatar', None)
+            email = form.cleaned_data['email']
+            alerts = form.cleaned_data['alerts']
+            email_updated = update_email(request, email)
+            alerts_updated = update_alerts(request, alerts)
+            if avatar:
+                save_avatar(request, avatar)
+                context['submit_avatar'] = 'new avatar saved'
+            if email_updated:
+                context['submit_email'] = 'new email saved'
+            if alerts_updated:
+                status = 'turned on' if alerts else 'turned off'
+                context['submit_alert'] = f'email alerts {status}'
     else:
-        return [request, 'users/profile.html', context]
-
-
-def save_profile(request):
-    context = {}
-    if not request.method == 'POST':
-        return render_with_error(profile, request, errormsg=(
-            'Internal form error. Please try again'))
-    avatar = request.FILES.get('avatar', None)
-    email = request.POST.get('email', None)
-    email_alerts_status = request.POST.get('alerts', None)
-    user = User.objects.get(id=request.user.id)
-    if avatar:
-        fss = FileSystemStorage()
-        file = fss.save(
-            f'{request.user.username}_avatar.{avatar.name.split(".")[-1]}',
-            avatar
+        form = ProfileForm(
+            initial={
+                'email': request.user.email,
+                'alerts': request.user.profile.send_email
+            }
         )
-        user.profile.avatar = fss.url(file)
-        user.profile.save()
-        context['submit_avatar'] = 'new avatar saved'
-    if email:
-        if email == user.email:
-            pass
-        elif Profile.param_exists('email', email):
-            return render_with_error(profile, request, errormsg=(
-                'There is a user with this e-mail'))
-        else:
-            user.email = email
-            user.save()
-            context['submit_email'] = 'new email saved, please reload page'
-    if email_alerts_status is not None:
-        if email_alerts_status == 'on':
-            user.profile.send_email = True
-        else:
-            user.profile.send_email = False
-        user.profile.save()
-        context['submit_alert'] = 'email alerts changed'
-    return HttpResponseRedirect(
-            reverse('users:profile', args=()))
+    context['form'] = form
+    return render(request, 'users/profile.html', context)
 
 
 def signup(request, fallback=False):
@@ -132,8 +100,3 @@ def do_signup(request):
     if user is not None:
         login(request, user)
         return render(request, 'users/profile.html', context)
-
-
-def do_logout(request):
-    logout(request)
-    return render(request, 'questions/index.html', {})

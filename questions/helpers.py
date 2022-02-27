@@ -10,7 +10,7 @@ def get_time_diff(thetime):
     elif delta.total_seconds() > 60*60*24*30:  # month
         return f'{round(delta.days / 30)} month(s) ago'
     elif delta.total_seconds() > 60*60*24*7:  # week
-        return f'{round(delta.weeks)} week(s) ago'
+        return f'{round(delta.days / 7)} week(s) ago'
     elif delta.total_seconds() > 60*60*24:  # day
         return f'{delta.days} day(s) ago'
     elif delta.total_seconds() > 60*60:  # hours

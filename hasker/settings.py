@@ -147,3 +147,6 @@ MEDIA_URL = '/media/'
 # CONSOLE EMAIL
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_FILE_PATH = '/tmp/emails'
+
+LOGIN_REDIRECT_URL = '/users/profile'
+LOGIN_URL = '/users/login'

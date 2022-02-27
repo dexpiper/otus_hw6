@@ -11,6 +11,13 @@
             {{ error_message }}
         </div>
         {% endif %}
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                <div class="alert alert-warning" role="alert">
+                    {{ field }} : {{ error }}
+                </div>
+            {% endfor %}
+        {% endfor %}
         {% if submit_email %}
         <div class="alert alert-success" role="alert">
             {{ submit_email }}
@@ -43,11 +50,7 @@
                 <h6>Email</h6>
             </div>
             <div class="col-5">
-                {% if user.email %}
-                <input class="form-control" form="input_form" type="text" name="email" id="email" value="{{ user.email }}">
-                {% else %}
-                <input class="form-control" form="input_form" type="text" name="email" id="email" value="example@post.com">
-                {% endif %}
+                <input class="form-control" form="input_form" type="text" name="{{ form.email.html_name }}" id="{{ form.email.id_for_label }}" value="{{ form.email.value }}">
             </div>
         </div>
         <div class="row" style="margin-bottom:30px; margin-top:30px;">
@@ -70,10 +73,13 @@
             <div class="col-5">
                 <div class="form-check">
                     <!-- EMAIL alerts -->
-                    <input type="hidden" name="alerts" form="input_form" value="off">
-                    <input class="form-check-input" type="checkbox" id="flexcheck"
-                        name="alerts" form="input_form"
-                        {% if user.profile.send_email %}
+                    <h3>{{ form.alerts.value }}</h3>
+                    <input type="hidden" name="{{ form.alerts.html_name }}" form="input_form" value="off">
+                    <input class="form-check-input" type="checkbox" id="{{ form.alerts.id_for_label }}"
+                        name="{{ form.alerts.html_name }}" form="input_form"
+                        {% if form.alerts.value == True %}
+                            checked
+                        {% elif form.alerts.value == 'on' %}
                             checked
                         {% endif %}
                         >
@@ -81,14 +87,14 @@
                   </div>
             </div>
         </div>
-    <form id="input_form" action="{% url 'users:save_profile' %}" method="post" enctype="multipart/form-data">
+    <form id="input_form" action="{% url 'users:profile' %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="row" style="margin-bottom:30px; margin-top:30px;">
             <div class="col-3"></div>
             <div class="col-5">
                 <div class="mb-3">
                     <label for="avatar" class="form-label">Upload your avatar:</label>
-                    <input class="form-control" type="file" id="avatar" name="avatar" accept="image/*">
+                    <input class="form-control" type="file" id="{{ form.avatar.id_for_label }}" name="{{ form.avatar.html_name }}" accept="image/*">
                 </div>
                 <button type="submit" class="btn btn-primary">Save</button>
                 <a type="button" class="btn btn-outline-danger" href="{% url 'users:logout' %}">Log out</a>
