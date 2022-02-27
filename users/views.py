@@ -1,14 +1,9 @@
-from django.shortcuts import render
-from hasker.helpers import render_with_error
+from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
-from django.http import HttpResponseRedirect
-from django.urls import reverse
 from django.contrib.auth.views import LoginView, LogoutView
 
-from .models import Profile
-from .forms import ProfileForm
+from .forms import ProfileForm, SignUpForm
 from .helpers import save_avatar, update_email, update_alerts
 
 
@@ -50,53 +45,20 @@ def profile(request):
     return render(request, 'users/profile.html', context)
 
 
-def signup(request, fallback=False):
+def signup(request):
     if request.user.is_authenticated:
-        return HttpResponseRedirect(
-            reverse('users:profile', args=()))
+        return redirect('users:profile')
     context = {}
-    if not fallback:
-        return render(request, 'users/signup.html', context)
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            raw_password = form.cleaned_data.get('password1')
+            user = authenticate(username=username, password=raw_password)
+            login(request, user)
+            return redirect('users:profile')
     else:
-        return [request, 'users/signup.html', context]
-
-
-def do_signup(request):
-    if request.user.is_authenticated:
-        return HttpResponseRedirect(
-            reverse('users:profile', args=()))
-    if not request.method == 'POST':
-        return render_with_error(profile, request, errormsg=(
-            'Internal form error. Please try again'))
-    username = request.POST.get('login', None)
-    email = request.POST.get('email', None)
-    pwd = request.POST.get('password', None)
-    pwd_conf = request.POST.get('password-conf', None)
-
-    # validation
-    if not all((username, email, pwd, pwd_conf)):
-        return render_with_error(signup, request, errormsg=(
-            'Some fields are empty'))
-    if Profile.param_exists('username', username):
-        return render_with_error(signup, request, errormsg=(
-            f'Username {username} is occupied'))
-    if Profile.param_exists('email', email):
-        return render_with_error(signup, request, errormsg=(
-            f'There is a user with e-mail {email}. Is it you?'))
-    if not pwd == pwd_conf:
-        return render_with_error(signup, request, errormsg=(
-            'Passwords do not match'))
-
-    # creation
-    new_user = User.objects.create_user(username=username,
-                                        email=email, password=pwd)
-    new_user.save()
-    try:
-        user = authenticate(request, username=new_user, password=pwd)
-    except Exception:
-        return render_with_error(signup, request, errormsg=(
-            'Internal auth error: cannot authenticate new user'))
-    context = {'user': user}
-    if user is not None:
-        login(request, user)
-        return render(request, 'users/profile.html', context)
+        form = SignUpForm()
+    context['form'] = form
+    return render(request, 'users/signup2.html', context)
