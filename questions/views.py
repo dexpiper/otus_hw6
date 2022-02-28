@@ -1,16 +1,16 @@
 from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
-from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponseRedirect
-from django.urls import reverse
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.conf import settings
 
 from .models import Question, Answer, Tag, QuestionVoters, AnswerVoters
 
-from hasker.helpers import render_with_error
 from hasker.signals import question_answered
+from .forms import QuestionForm
+from .helpers import save_tags
 
 
 num_pages = settings.ELEMENTS_PER_PAGE
@@ -102,66 +102,27 @@ def question(request, question_id):
 
 
 @login_required
-def make_question(request, fallback=False):
-    if not fallback:
-        return render(request, 'questions/make_question.html', {})
-    else:
-        return [request, 'questions/make_question.html', {}]
-
-
-@login_required
-def save_question(request):
-    question_title = request.POST.get('title', None)
-    question_content = request.POST.get('content', None)
-    question_tags = request.POST.get('tags', None)
-    question_id = request.POST.get('question_id', None)  # normally None
-    if not all((question_title, question_content)):
-        return render_with_error(make_question, request,
-                                 errormsg='Please fill in title and content',
-                                 question_id=question_id or None,
-                                 question_title=question_title,
-                                 question_content=question_content)
-    if question_id:
-        question = Question.objects.get(pk=question_id)
-        question.title = question_title
-        question.content = question_content
-        question.save()
-    else:
-        question = Question(
+def make_question(request):
+    context = {}
+    if request.method == 'POST':
+        form = QuestionForm(request.POST)
+        if form.is_valid():
+            form.save()
+            title = form.cleaned_data.get('title')
+            content = form.cleaned_data.get('content')
+            tags = form.cleaned_data.get('tags')
+            question = Question(
                 author=request.user,
-                title=question_title,
-                content=question_content
+                title=title,
+                content=content
             )
-        question.save()
-    if question_tags:
-        question_tags = question_tags.split()
-        if len(question_tags) > 3:
-            return render_with_error(
-                make_question, request,
-                errormsg='You can only provide up to 3 tags',
-                question_title=question_title,
-                question_content=question_content,
-                question_id=question.id
-            )
-        for tag in question_tags:
-            tag = tag.strip()
-            try:
-                old_tag = Tag.objects.get(title=tag)
-            except ObjectDoesNotExist:
-                pass
-            else:
-                old_tag.questions.add(question)
-                continue
-            try:
-                t = Tag.objects.create(title=tag)
-                t.questions.add(question)
-            except (KeyError, TypeError, ValueError, ObjectDoesNotExist):
-                return render_with_error(
-                    make_question, request,
-                    errormsg='Error with tag creation. Please try again.'
-                )
-    return HttpResponseRedirect(
-        reverse('questions:question', args=(question.id,)))
+            question.save()
+            save_tags(tags, question, Tag)
+            return redirect('question', question_id=question.id)
+    else:
+        form = QuestionForm()
+    context['form'] = form
+    return render(request, 'questions/make_question.html', context)
 
 
 @login_required

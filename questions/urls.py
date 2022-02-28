@@ -9,7 +9,6 @@ urlpatterns = [
     path('search', views.index_search, name='search'),
     path('<int:question_id>', views.question, name='question'),
     path('add', views.make_question, name='make_question'),
-    path('save_question', views.save_question, name='save_question'),
     path('tag/<int:tag_id>', views.search_tag, name='searchtag'),
     path('alterflag/<int:answer_id>', views.alter_flag, name='alterflag'),
     path('answervote/<int:answer_id>/<int:upvote>', views.answer_vote,

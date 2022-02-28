@@ -5,7 +5,7 @@
 {% block content %}
 {% load static %}
 
-<form action="{% url 'questions:save_question' %}" method="post" style="margin-bottom:40px; margin-top:40px; margin-left:15px; margin-right:25px;">
+<form action="{% url 'questions:make_question' %}" method="post" style="margin-bottom:40px; margin-top:40px; margin-left:15px; margin-right:25px;">
   <legend><h2 style="margin-bottom:20px;">Ask your question</h2></legend>
   
   {% csrf_token %}
@@ -14,24 +14,28 @@
       {{ error_message }}
   </div>
   {% endif %}
-  <div class="mb-3">
-    <label for="title" class="form-label">Title:</label>
-    <input type="text" class="form-control" name="title" id="title" placeholder="Question title"></input>
-  </div>
-  <div class="mb-3">
-    <label for="content" class="form-label">Your question:</label>
-    <textarea class="form-control" id="content" name="content" rows="6" placeholder="Your question">{{ question_content }}</textarea>
-  </div>
-  <div class="mb-3">
-    <label for="tags" class="form-label">Tags:</label>
-    <input class="form-control" id="tags" name="tags" placeholder="Type your tags here"></input>
-    <div id="tagsHelp" class="form-text">Please provide up to 3 one-word tags separated by spaces</div>
+  {% for field in form %}
+  <div class="mb-3" style="margin-bottom:40px;">
+    <label for="{{ field.html_name }}" class="form-label">{{ field.label }}</label>
+    <input class="form-control form-control-sm" type="
+    {% if field.field.widget.input_type %}
+    {{ field.field.widget.input_type }}
+    {% else %}
+    textarea
+    {% endif %}
+    " id="{{ field.id_for_label }}" name="{{ field.html_name }}">
+    {% if field.help_text %}
+      <small style="color: grey">{{ field.help_text }}</small>
+    {% endif %}
+    {% for error in field.errors %}
+    <div class="alert alert-warning" role="alert">
+        {{ error }}
+    </div>
+    {% endfor %}
+  {% endfor %}
   </div>
   <input type="submit" class="btn btn-primary" value="Submit"></input>
   <input type="reset" class="btn btn-secondary" value="Clear"></input>
-  {% if question_id %}
-  <div class="invisible"><input type="text" name="question_id" id="question_id" readonly>{{ question_id }}</input></div>
-  {% endif %}
 </form>
 
 {% endblock %}

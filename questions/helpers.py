@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from django.core.exceptions import ObjectDoesNotExist
 
 
 def get_time_diff(thetime):
@@ -19,3 +20,19 @@ def get_time_diff(thetime):
         return f'{round(delta.total_seconds() / 60)} minute(s) ago'
     else:
         return 'Just now'
+
+
+def save_tags(tags, question, tag_model):
+    if not tags:
+        return
+    for tag in tags.split():
+        tag = tag.strip()
+        try:
+            old_tag = tag_model.objects.get(title=tag)
+        except ObjectDoesNotExist:
+            pass
+        else:
+            old_tag.questions.add(question)
+            continue
+        t = tag_model.objects.create(title=tag)
+        t.questions.add(question)
