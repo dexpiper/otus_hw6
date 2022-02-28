@@ -1,9 +1,11 @@
 from django.db.models import Q
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import Http404, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.conf import settings
 
 from .models import Question, Answer, Tag, QuestionVoters, AnswerVoters
 
@@ -11,29 +13,44 @@ from hasker.helpers import render_with_error
 from hasker.signals import question_answered
 
 
-def index(request, pages=20):
+num_pages = settings.ELEMENTS_PER_PAGE
+
+
+def index(request, pages=num_pages):
     queryset = Question.objects.all().order_by('-created_on', 'title')
     paginator = Paginator(queryset, pages)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    context = {
-        'page_obj': page_obj
-    }
+    context = {'page_obj': page_obj}
     return render(request, 'questions/index.html', context)
 
 
-def index_hot(request, pages=20):
+def index_hot(request, pages=num_pages):
     queryset = Question.objects.all().order_by('-votes', 'title')
     paginator = Paginator(queryset, pages)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    context = {
-        'page_obj': page_obj
-    }
+    context = {'page_obj': page_obj}
     return render(request, 'questions/hot_questions.html', context)
 
 
-def index_search(request, pages=20):
+def search_tag(request, tag_id, pages=num_pages):
+    tag = Tag.objects.get(id=tag_id)
+    queryset = tag.questions.all()
+    paginator = Paginator(queryset, pages)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+        'tag': tag
+    }
+    return render(request, 'questions/tag.html', context)
+
+
+def index_search(request, pages=num_pages):
+    """
+    Search question by search phrase or by tag
+    """
     search: str = request.POST.get('search', None)
     if search.startswith('tag:'):
         tag_name = search[4:].strip()
@@ -43,8 +60,7 @@ def index_search(request, pages=20):
             context = {'error_message': f'No tag {tag_name} found'}
             return render(request, 'questions/search.html', context)
         return search_tag(request, tag_id=tag.id)
-    if len(search) > 30:
-        search = search[:30]
+
     queryset = Question.objects.select_related().filter(
             Q(title__icontains=search)
           | Q(content__icontains=search)                        # noqa E131
@@ -61,10 +77,7 @@ def index_search(request, pages=20):
 
 
 def question(request, question_id, fallback=False):
-    try:
-        qw = Question.objects.get(pk=question_id)
-    except Question.DoesNotExist:
-        raise Http404('No such question :(')
+    qw = get_object_or_404(Question.objects.get(pk=question_id))
     answer_query = Answer.objects.filter(question=question_id).order_by(
             '-votes', '-answer_flag')
     tags = Tag.objects.filter(questions=question_id)
@@ -77,10 +90,8 @@ def question(request, question_id, fallback=False):
         return [request, 'questions/question.html', context]
 
 
+@login_required
 def answer_question(request, question_id):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect(
-            reverse('users:login', args=()))
     qw = Question.objects.get(pk=question_id)
     try:
         answer_text = request.POST['answer_text']
@@ -97,20 +108,16 @@ def answer_question(request, question_id):
             reverse('questions:question', args=(qw.id,)))
 
 
+@login_required
 def make_question(request, fallback=False):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect(
-            reverse('users:login', args=()))
     if not fallback:
         return render(request, 'questions/make_question.html', {})
     else:
         return [request, 'questions/make_question.html', {}]
 
 
+@login_required
 def save_question(request):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect(
-            reverse('users:login', args=()))
     question_title = request.POST.get('title', None)
     question_content = request.POST.get('content', None)
     question_tags = request.POST.get('tags', None)
@@ -164,23 +171,8 @@ def save_question(request):
         reverse('questions:question', args=(question.id,)))
 
 
-def search_tag(request, tag_id, pages=20):
-    tag = Tag.objects.get(id=tag_id)
-    queryset = tag.questions.all()
-    paginator = Paginator(queryset, pages)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    context = {
-        'page_obj': page_obj,
-        'tag': tag
-    }
-    return render(request, 'questions/tag.html', context)
-
-
+@login_required
 def alter_flag(request, answer_id):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect(
-            reverse('users:login', args=()))
     answer = Answer.objects.get(pk=answer_id)
     qw = answer.question
     if not qw.author.id == request.user.id:
@@ -207,10 +199,8 @@ def alter_flag(request, answer_id):
     return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
 
+@login_required
 def answer_vote(request, answer_id, upvote=1):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect(
-            reverse('users:login', args=()))
     answer = Answer.objects.get(pk=answer_id)
     if answer.author.id == request.user.id:
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
@@ -241,10 +231,8 @@ def answer_vote(request, answer_id, upvote=1):
     return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
 
+@login_required
 def question_vote(request, question_id, upvote=1):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect(
-            reverse('users:login', args=()))
     qw = Question.objects.get(pk=question_id)
     if qw.author.id == request.user.id:
         return HttpResponseRedirect(request.META['HTTP_REFERER'])

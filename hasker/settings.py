@@ -151,3 +151,6 @@ EMAIL_FILE_PATH = '/tmp/emails'
 
 LOGIN_REDIRECT_URL = '/users/profile'
 LOGIN_URL = '/users/login'
+
+ELEMENTS_PER_PAGE = 20
+TRENDING_QUESTIONS_NUMBER = 20
