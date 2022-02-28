@@ -17,7 +17,6 @@ def index(request, pages=20):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
-        'trending': Question.trending(),
         'page_obj': page_obj
     }
     return render(request, 'questions/index.html', context)
@@ -29,7 +28,6 @@ def index_hot(request, pages=20):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
-        'trending': Question.trending(),
         'page_obj': page_obj
     }
     return render(request, 'questions/hot_questions.html', context)
@@ -42,8 +40,7 @@ def index_search(request, pages=20):
         try:
             tag = Tag.objects.get(title=tag_name)
         except ObjectDoesNotExist:
-            context = {'error_message': f'No tag {tag_name} found',
-                       'trending': Question.trending()}
+            context = {'error_message': f'No tag {tag_name} found'}
             return render(request, 'questions/search.html', context)
         return search_tag(request, tag_id=tag.id)
     if len(search) > 30:
@@ -57,7 +54,6 @@ def index_search(request, pages=20):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
-        'trending': Question.trending(),
         'page_obj': page_obj,
         'searchstring': search
     }
@@ -175,7 +171,6 @@ def search_tag(request, tag_id, pages=20):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {
-        'trending': Question.trending(),
         'page_obj': page_obj,
         'tag': tag
     }
