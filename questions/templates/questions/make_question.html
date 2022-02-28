@@ -17,13 +17,11 @@
   {% for field in form %}
   <div class="mb-3" style="margin-bottom:40px;">
     <label for="{{ field.html_name }}" class="form-label">{{ field.label }}</label>
-    <input class="form-control form-control-sm" type="
     {% if field.field.widget.input_type %}
-    {{ field.field.widget.input_type }}
+    <input class="form-control form-control-sm" type="{{ field.field.widget.input_type }}" id="{{ field.id_for_label }}" name="{{ field.html_name }}">
     {% else %}
-    textarea
+    <textarea class="form-control" id="{{ field.id_for_label }}" name="{{ field.html_name }}" rows="6" placeholder="Your question"></textarea>
     {% endif %}
-    " id="{{ field.id_for_label }}" name="{{ field.html_name }}">
     {% if field.help_text %}
       <small style="color: grey">{{ field.help_text }}</small>
     {% endif %}
@@ -32,8 +30,8 @@
         {{ error }}
     </div>
     {% endfor %}
-  {% endfor %}
   </div>
+  {% endfor %}
   <input type="submit" class="btn btn-primary" value="Submit"></input>
   <input type="reset" class="btn btn-secondary" value="Clear"></input>
 </form>

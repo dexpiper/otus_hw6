@@ -76,7 +76,7 @@ def index_search(request, pages=num_pages):
     return render(request, 'questions/search.html', context)
 
 
-def question(request, question_id):
+def show_question(request, question_id):
     """
     Show question page or post a new answer for a question
     """
@@ -91,7 +91,7 @@ def question(request, question_id):
                             content=answer_text)
             answer.save()
             # send a signal for question author about new answer
-            question_answered.send(sender=question, question=qw)
+            question_answered.send(sender=show_question, question=qw)
         else:
             context['error_message'] = 'Error occured! Try again please'
     answer_query = Answer.objects.filter(question=question_id).order_by(
@@ -107,7 +107,6 @@ def make_question(request):
     if request.method == 'POST':
         form = QuestionForm(request.POST)
         if form.is_valid():
-            form.save()
             title = form.cleaned_data.get('title')
             content = form.cleaned_data.get('content')
             tags = form.cleaned_data.get('tags')
@@ -118,7 +117,7 @@ def make_question(request):
             )
             question.save()
             save_tags(tags, question, Tag)
-            return redirect('question', question_id=question.id)
+            return redirect('questions:question', question_id=question.id)
     else:
         form = QuestionForm()
     context['form'] = form

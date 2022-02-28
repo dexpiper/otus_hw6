@@ -9,10 +9,6 @@ class QuestionForm(forms.Form):
                               help_text='Short questions make good answers')
     tags = forms.CharField(max_length=60, required=False)
 
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
-        super(QuestionForm, self).__init__(*args, **kwargs)
-
     def clean_tags(self):
         provided_tags = self.cleaned_data.get('tags')
         if not provided_tags:

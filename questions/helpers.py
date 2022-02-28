@@ -25,7 +25,7 @@ def get_time_diff(thetime):
 def save_tags(tags, question, tag_model):
     if not tags:
         return
-    for tag in tags.split():
+    for tag in tags:
         tag = tag.strip()
         try:
             old_tag = tag_model.objects.get(title=tag)
