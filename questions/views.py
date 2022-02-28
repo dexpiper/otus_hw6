@@ -1,5 +1,5 @@
 from django.db.models import Q
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponseRedirect
 from django.urls import reverse
@@ -76,36 +76,29 @@ def index_search(request, pages=num_pages):
     return render(request, 'questions/search.html', context)
 
 
-def question(request, question_id, fallback=False):
-    qw = get_object_or_404(Question.objects.get(pk=question_id))
+def question(request, question_id):
+    """
+    Show question page or post a new answer for a question
+    """
+    qw = get_object_or_404(Question, pk=question_id)
+    context = {'question': qw}
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            return redirect('users:login')
+        answer_text = request.POST.get('answer_text', None)
+        if answer_text:
+            answer = Answer(author=request.user, question=qw,
+                            content=answer_text)
+            answer.save()
+            # send a signal for question author about new answer
+            question_answered.send(sender=question, question=qw)
+        else:
+            context['error_message'] = 'Error occured! Try again please'
     answer_query = Answer.objects.filter(question=question_id).order_by(
-            '-votes', '-answer_flag')
+        '-votes', '-answer_flag', '-created_on')
     tags = Tag.objects.filter(questions=question_id)
-    context = {
-        'question': qw, 'answer_query': answer_query, 'tags': tags
-    }
-    if not fallback:
-        return render(request, 'questions/question.html', context)
-    else:
-        return [request, 'questions/question.html', context]
-
-
-@login_required
-def answer_question(request, question_id):
-    qw = Question.objects.get(pk=question_id)
-    try:
-        answer_text = request.POST['answer_text']
-    except (KeyError, Answer.DoesNotExist):
-        r = question(request, question_id, fallback=True)
-        r[2].update({'error_message': 'Error occured! Try again please'})
-        return render(request=r[0], template_name=r[1], context=r[2])
-    else:
-        answer = Answer(author=request.user, question=qw,
-                        content=answer_text)
-        answer.save()
-        question_answered.send(sender=answer_question, question=qw)
-        return HttpResponseRedirect(
-            reverse('questions:question', args=(qw.id,)))
+    context.update({'answer_query': answer_query, 'tags': tags})
+    return render(request, 'questions/question.html', context)
 
 
 @login_required

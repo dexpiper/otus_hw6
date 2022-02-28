@@ -128,8 +128,9 @@
 
 <hr>
 <!-- ANSWER FORM -->
+{% if user.is_authenticated %}
 <legend><h3>Your answer:</h3></legend>
-<form action="{% url 'questions:answer' question.id %}" method="post" style="margin-bottom:40px;">
+<form action="{% url 'questions:question' question.id %}" method="post" style="margin-bottom:40px;">
   {% csrf_token %}
   {% if error_message %}
   <div class="alert alert-warning" role="alert">
@@ -140,6 +141,7 @@
   <input type="submit" class="btn btn-primary" value="Submit">
   <input type="reset" class="btn btn-secondary" value="Clear">
 </form>
-
-
+{% else %}
+<h4 style="margin-left:10px;">Please register or sign up to write an answer</h4>
+{% endif %}
 {% endblock %}
