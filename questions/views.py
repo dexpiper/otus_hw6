@@ -9,7 +9,7 @@ from django.conf import settings
 from .models import Question, Answer, Tag, QuestionVoters, AnswerVoters
 
 from hasker.signals import question_answered
-from .forms import QuestionForm
+from .forms import QuestionForm, AnswerForm
 from .helpers import save_tags
 
 
@@ -85,19 +85,21 @@ def show_question(request, question_id):
     if request.method == 'POST':
         if not request.user.is_authenticated:
             return redirect('users:login')
-        answer_text = request.POST.get('answer_text', None)
-        if answer_text:
+        form = AnswerForm(request.POST, question_id=question_id)
+        if form.is_valid():
+            content = request.POST.get('content', None)
             answer = Answer(author=request.user, question=qw,
-                            content=answer_text)
+                            content=content)
             answer.save()
             # send a signal for question author about new answer
             question_answered.send(sender=show_question, question=qw)
-        else:
-            context['error_message'] = 'Error occured! Try again please'
+    else:
+        form = AnswerForm()
+
     answer_query = Answer.objects.filter(question=question_id).order_by(
         '-votes', '-answer_flag', '-created_on')
     tags = Tag.objects.filter(questions=question_id)
-    context.update({'answer_query': answer_query, 'tags': tags})
+    context.update({'answer_query': answer_query, 'tags': tags, 'form': form})
     return render(request, 'questions/question.html', context)
 
 
