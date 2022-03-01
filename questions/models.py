@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings as sett
-# from django.contrib.auth import get_user_model
+from django.db import transaction
 
 from .helpers import get_time_diff
 
@@ -65,6 +65,49 @@ class Answer(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
     answer_flag = models.IntegerField(choices=ANSWER_STATUS, default=0)
     votes = models.IntegerField(default=0)
+
+    @transaction.atomic
+    def set_new_flag(self):
+        """
+        Question author marked the answer as 'best'.
+        Set 'answer flag' for the answer (from 0 to 1)
+        and set question status as 'answer given' (1).
+        """
+        qw = self.question
+        self.answer_flag = 1
+        qw.status = 1
+        qw.save()
+        self.save()
+
+    @transaction.atomic
+    def change_flag(self):
+        """
+        Question author changed his/her mind and marked
+        another answer as best.
+        Set 'answer flag' for the answer (from 0 to 1)
+        and set question status as 'answer given' (1).
+        """
+        qw = self.question
+        prev_answer = qw.answer_set.get(answer_flag=1)
+        prev_answer.answer_flag = 0
+        self.answer_flag = 1
+        prev_answer.save()
+        self.save()
+
+    @transaction.atomic
+    def delete_flag(self):
+        """
+        Question author decided to unlabel the answer
+        as 'best answer'.
+        Delete 'answer flag' for the answer (set 0)
+        and change question status from 'answer given' (1)
+        to 'no answer' (0).
+        """
+        qw = self.question
+        self.answer_flag = 0
+        qw.status = 0
+        self.save()
+        qw.save()
 
 
 class Tag(models.Model):

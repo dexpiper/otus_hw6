@@ -1,7 +1,6 @@
 from django.db.models import Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseRedirect
-from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.conf import settings
@@ -56,7 +55,7 @@ def index_search(request, pages=num_pages):
         tag_name = search[4:].strip()
         try:
             tag = Tag.objects.get(title=tag_name)
-        except ObjectDoesNotExist:
+        except Tag.DoesNotExist:
             context = {'error_message': f'No tag {tag_name} found'}
             return render(request, 'questions/search.html', context)
         return search_tag(request, tag_id=tag.id)
@@ -105,6 +104,9 @@ def show_question(request, question_id):
 
 @login_required
 def make_question(request):
+    """
+    Post a new question to Hasker
+    """
     context = {}
     if request.method == 'POST':
         form = QuestionForm(request.POST)
@@ -128,29 +130,30 @@ def make_question(request):
 
 @login_required
 def alter_flag(request, answer_id):
+    """
+    Question author marks an answer to his question as 'best'
+    or changes this choice (answer.answer_flag model field)
+    """
     answer = Answer.objects.get(pk=answer_id)
     qw = answer.question
     if not qw.author.id == request.user.id:
+        # only question author could mark answer as 'best'
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
     if qw.author.id == answer.author.id:
+        # question author cannot mark his own answers as 'best'
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
+
     if answer.answer_flag == 1:
-        answer.answer_flag = 0
-        qw.status = 0
-        answer.save()
-        qw.save()
+        # this very answer is a 'best' already
+        answer.delete_flag()
     else:
         if qw.status == 0:
-            answer.answer_flag = 1
-            qw.status = 1
-            qw.save()
-            answer.save()
+            # question has no 'best answer'
+            answer.set_new_flag()
         elif qw.status == 1:
-            prev_answer = qw.answer_set.get(answer_flag=1)
-            prev_answer.answer_flag = 0
-            answer.answer_flag = 1
-            prev_answer.save()
-            answer.save()
+            # question has another 'best answer'
+            answer.change_flag()
+
     return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
 
