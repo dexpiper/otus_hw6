@@ -1,15 +1,14 @@
-from django.db.models import Q
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponseRedirect
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.conf import settings
+from django.db.models import Q
+from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import Question, Answer, Tag, Voters
-from .forms import QuestionForm, AnswerForm
-from .helpers import save_tags
 from hasker.signals import question_answered
-
+from .forms import AnswerForm, QuestionForm
+from .helpers import save_tags
+from .models import Answer, Question, Tag, Voters
 
 num_pages = settings.ELEMENTS_PER_PAGE  # pagination constant
 

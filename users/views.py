@@ -1,10 +1,10 @@
-from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView
+from django.shortcuts import redirect, render
 
 from .forms import ProfileForm, SignUpForm
-from .helpers import save_avatar, update_email, update_alerts
+from .helpers import save_avatar, update_alerts, update_email
 
 
 class Login(LoginView):

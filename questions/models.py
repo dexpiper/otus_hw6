@@ -1,11 +1,9 @@
-from django.db import models
 from django.conf import settings as sett
-from django.db import transaction
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.db import models, transaction
 
 from .helpers import get_time_diff
-
 
 QUESTION_STATUS = (
     (0, 'No_answer'),
