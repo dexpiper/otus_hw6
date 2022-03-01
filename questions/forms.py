@@ -20,6 +20,7 @@ class AnswerForm(forms.Form):
                 u'There is an answer with exactly the same text'
                 u' for this question!'
             )
+        return content
 
 
 class QuestionForm(forms.Form):

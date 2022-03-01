@@ -87,7 +87,7 @@ def show_question(request, question_id):
             return redirect('users:login')
         form = AnswerForm(request.POST, question_id=question_id)
         if form.is_valid():
-            content = request.POST.get('content', None)
+            content = form.cleaned_data.get('content')
             answer = Answer(author=request.user, question=qw,
                             content=content)
             answer.save()
