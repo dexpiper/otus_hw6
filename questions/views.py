@@ -89,7 +89,7 @@ def show_question(request, question_id):
             answer = Answer(author=request.user, question=qw,
                             content=content)
             answer.save()
-            # send a signal for question author about new answer
+            # send a signal about new answer
             question_answered.send(sender=show_question, question=qw)
     else:
         form = AnswerForm()
@@ -143,7 +143,7 @@ def alter_flag(request, answer_id):
         # question author cannot mark his own answers as 'best'
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
-    if answer.answer_flag == 1:      # this very answer is a 'best' already
+    if answer.answer_flag == 1:      # this very answer is the 'best' already
         answer.delete_flag()
     else:
         if qw.status == 0:           # question has no 'best answer'

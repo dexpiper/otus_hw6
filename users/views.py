@@ -61,4 +61,4 @@ def signup(request):
     else:
         form = SignUpForm()
     context['form'] = form
-    return render(request, 'users/signup2.html', context)
+    return render(request, 'users/signup.html', context)

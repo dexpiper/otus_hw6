@@ -2,7 +2,10 @@ from datetime import datetime, timezone
 from django.core.exceptions import ObjectDoesNotExist
 
 
-def get_time_diff(thetime):
+def get_time_diff(thetime) -> str:
+    """
+    Return a string describing how old the question is.
+    """
     now = datetime.now(timezone.utc)
     delta = now - thetime
 
