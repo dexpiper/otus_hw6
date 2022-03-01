@@ -3,9 +3,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 
-from .models import Question, Answer, Tag, QuestionVoters, AnswerVoters
+from .models import Question, Answer, Tag, Voters
 
 from hasker.signals import question_answered
 from .forms import QuestionForm, AnswerForm
@@ -165,14 +166,19 @@ def answer_vote(request, answer_id, upvote=1):
         # user cannot vote for his own answers
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
-    voters_number = AnswerVoters.objects.filter(
-        entity_id=answer, user_id=request.user).count()
+    answer_ct = ContentType.objects.get_for_model(answer)
+    voters_number = Voters.objects.filter(
+        content_type=answer_ct,
+        object_id=answer.id,
+        user_id=request.user.id).count()
     if not voters_number:
-        user_vote = AnswerVoters(entity_id=answer,
-                                 user_id=request.user)
+        user_vote = Voters(content_object=answer,
+                           user_id=request.user.id)
     else:
-        user_vote = AnswerVoters.objects.get(
-            entity_id=answer, user_id=request.user)
+        user_vote = Voters.objects.get(
+            content_type=answer_ct,
+            object_id=answer.id,
+            user_id=request.user.id)
     if upvote:
         if user_vote.vote in (0, -1):
             answer.votes += 1
@@ -200,14 +206,19 @@ def question_vote(request, question_id, upvote=1):
     if qw.author.id == request.user.id:
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
-    voters_number = QuestionVoters.objects.filter(
-        entity_id=question_id, user_id=request.user).count()
+    question_ct = ContentType.objects.get_for_model(qw)
+    voters_number = Voters.objects.filter(
+        content_type=question_ct,
+        object_id=qw.id,
+        user_id=request.user.id).count()
     if not voters_number:
-        user_vote = QuestionVoters(entity_id=qw,
-                                   user_id=request.user)
+        user_vote = Voters(content_object=qw,
+                           user_id=request.user.id)
     else:
-        user_vote = QuestionVoters.objects.get(
-            entity_id=qw, user_id=request.user)
+        user_vote = Voters.objects.get(
+            content_type=question_ct,
+            object_id=qw.id,
+            user_id=request.user.id)
     if upvote:
         if user_vote.vote in (0, -1):
             qw.votes += 1

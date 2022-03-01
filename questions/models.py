@@ -1,6 +1,8 @@
 from django.db import models
 from django.conf import settings as sett
 from django.db import transaction
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 
 from .helpers import get_time_diff
 
@@ -115,13 +117,9 @@ class Tag(models.Model):
         return self.title
 
 
-class QuestionVoters(models.Model):
-    entity_id = models.ForeignKey(Question, on_delete=models.CASCADE)
-    user_id = models.ForeignKey(sett.AUTH_USER_MODEL, on_delete=models.CASCADE)
+class Voters(models.Model):
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
     vote = models.IntegerField(choices=VOTE_STATUS, default=0)
-
-
-class AnswerVoters(models.Model):
-    entity_id = models.ForeignKey(Answer, on_delete=models.CASCADE)
-    user_id = models.ForeignKey(sett.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    vote = models.IntegerField(choices=VOTE_STATUS, default=0)
+    user_id = models.PositiveIntegerField()
