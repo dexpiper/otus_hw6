@@ -15,7 +15,7 @@ urlpatterns = [
     path('__debug__/', include('debug_toolbar.urls')),
     path(
         "favicon.ico",
-        RedirectView.as_view(url=staticfiles_storage.url("favicon.ico")),
+        RedirectView.as_view(url=staticfiles_storage.url("img/favicon.ico")),
     ),
 ] + static(settings.MEDIA_URL,
            document_root=settings.MEDIA_ROOT)
