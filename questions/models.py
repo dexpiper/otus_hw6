@@ -69,9 +69,9 @@ class Answer(models.Model):
     @transaction.atomic
     def set_new_flag(self):
         """
-        Question author marked the answer as 'best'.
-        Set 'answer flag' for the answer (from 0 to 1)
-        and set question status as 'answer given' (1).
+        Question author marked the answer as 'best'. Set 'answer flag'
+        for the answer (from 0 to 1) and set question status as 'answer
+        given' (1).
         """
         qw = self.question
         self.answer_flag = 1
@@ -82,10 +82,9 @@ class Answer(models.Model):
     @transaction.atomic
     def change_flag(self):
         """
-        Question author changed his/her mind and marked
-        another answer as best.
-        Set 'answer flag' for the answer (from 0 to 1)
-        and set question status as 'answer given' (1).
+        Question author changed his/her mind and marked another answer
+        as best. Set 'answer flag' for the answer (from 0 to 1) and set
+        question status as 'answer given' (1).
         """
         qw = self.question
         prev_answer = qw.answer_set.get(answer_flag=1)
@@ -97,11 +96,9 @@ class Answer(models.Model):
     @transaction.atomic
     def delete_flag(self):
         """
-        Question author decided to unlabel the answer
-        as 'best answer'.
-        Delete 'answer flag' for the answer (set 0)
-        and change question status from 'answer given' (1)
-        to 'no answer' (0).
+        Question author decided to unlabel the answer as 'best answer'.
+        Delete 'answer flag' for the answer (set 0) and change question
+        status from 'answer given' (1) to 'no answer' (0).
         """
         qw = self.question
         self.answer_flag = 0

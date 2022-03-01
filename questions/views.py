@@ -136,6 +136,7 @@ def alter_flag(request, answer_id):
     """
     answer = Answer.objects.get(pk=answer_id)
     qw = answer.question
+
     if not qw.author.id == request.user.id:
         # only question author could mark answer as 'best'
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
@@ -143,15 +144,12 @@ def alter_flag(request, answer_id):
         # question author cannot mark his own answers as 'best'
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
-    if answer.answer_flag == 1:
-        # this very answer is a 'best' already
+    if answer.answer_flag == 1:      # this very answer is a 'best' already
         answer.delete_flag()
     else:
-        if qw.status == 0:
-            # question has no 'best answer'
+        if qw.status == 0:           # question has no 'best answer'
             answer.set_new_flag()
-        elif qw.status == 1:
-            # question has another 'best answer'
+        elif qw.status == 1:         # question has another 'best answer'
             answer.change_flag()
 
     return HttpResponseRedirect(request.META['HTTP_REFERER'])
@@ -159,8 +157,12 @@ def alter_flag(request, answer_id):
 
 @login_required
 def answer_vote(request, answer_id, upvote=1):
+    """
+    Upvote or downvote an answer
+    """
     answer = Answer.objects.get(pk=answer_id)
     if answer.author.id == request.user.id:
+        # user cannot vote for his own answers
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
     voters_number = AnswerVoters.objects.filter(
@@ -191,6 +193,9 @@ def answer_vote(request, answer_id, upvote=1):
 
 @login_required
 def question_vote(request, question_id, upvote=1):
+    """
+    Upvote or downvote a question
+    """
     qw = Question.objects.get(pk=question_id)
     if qw.author.id == request.user.id:
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
