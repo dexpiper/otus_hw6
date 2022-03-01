@@ -3,17 +3,15 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 
 from .models import Question, Answer, Tag, Voters
-
-from hasker.signals import question_answered
 from .forms import QuestionForm, AnswerForm
 from .helpers import save_tags
+from hasker.signals import question_answered
 
 
-num_pages = settings.ELEMENTS_PER_PAGE
+num_pages = settings.ELEMENTS_PER_PAGE  # pagination constant
 
 
 def index(request, pages=num_pages):
@@ -157,7 +155,7 @@ def alter_flag(request, answer_id):
 
 
 @login_required
-def answer_vote(request, answer_id, upvote=1):
+def answer_vote(request, answer_id, vote=1):
     """
     Upvote or downvote an answer
     """
@@ -166,72 +164,21 @@ def answer_vote(request, answer_id, upvote=1):
         # user cannot vote for his own answers
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
-    answer_ct = ContentType.objects.get_for_model(answer)
-    voters_number = Voters.objects.filter(
-        content_type=answer_ct,
-        object_id=answer.id,
-        user_id=request.user.id).count()
-    if not voters_number:
-        user_vote = Voters(content_object=answer,
-                           user_id=request.user.id)
-    else:
-        user_vote = Voters.objects.get(
-            content_type=answer_ct,
-            object_id=answer.id,
-            user_id=request.user.id)
-    if upvote:
-        if user_vote.vote in (0, -1):
-            answer.votes += 1
-            user_vote.vote += 1
-            user_vote.save()
-        else:
-            return HttpResponseRedirect(request.META['HTTP_REFERER'])
-    else:
-        if user_vote.vote in (0, 1):
-            answer.votes -= 1
-            user_vote.vote -= 1
-            user_vote.save()
-        else:
-            return HttpResponseRedirect(request.META['HTTP_REFERER'])
-    answer.save()
+    Voters.register_vote(object=answer, user_id=request.user.id,
+                         vote=vote)
     return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
 
 @login_required
-def question_vote(request, question_id, upvote=1):
+def question_vote(request, question_id, vote=1):
     """
     Upvote or downvote a question
     """
     qw = Question.objects.get(pk=question_id)
     if qw.author.id == request.user.id:
+        # user cannot vote for his own questions
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
-    question_ct = ContentType.objects.get_for_model(qw)
-    voters_number = Voters.objects.filter(
-        content_type=question_ct,
-        object_id=qw.id,
-        user_id=request.user.id).count()
-    if not voters_number:
-        user_vote = Voters(content_object=qw,
-                           user_id=request.user.id)
-    else:
-        user_vote = Voters.objects.get(
-            content_type=question_ct,
-            object_id=qw.id,
-            user_id=request.user.id)
-    if upvote:
-        if user_vote.vote in (0, -1):
-            qw.votes += 1
-            user_vote.vote += 1
-            user_vote.save()
-        else:
-            return HttpResponseRedirect(request.META['HTTP_REFERER'])
-    else:
-        if user_vote.vote in (0, 1):
-            qw.votes -= 1
-            user_vote.vote -= 1
-            user_vote.save()
-        else:
-            return HttpResponseRedirect(request.META['HTTP_REFERER'])
-    qw.save()
+    Voters.register_vote(object=qw, user_id=request.user.id,
+                         vote=vote)
     return HttpResponseRedirect(request.META['HTTP_REFERER'])

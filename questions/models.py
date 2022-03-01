@@ -123,3 +123,53 @@ class Voters(models.Model):
     content_object = GenericForeignKey('content_type', 'object_id')
     vote = models.IntegerField(choices=VOTE_STATUS, default=0)
     user_id = models.PositiveIntegerField()
+
+    @staticmethod
+    @transaction.atomic
+    def register_vote(object: Question or Answer,
+                      user_id: int, vote: int):
+        """
+        User votes for a question or for an answer.
+        * object: instance of Question or Answer model classes
+        * user_id: request.user.id
+        * vote: 1 or 0 (if user upvoted or downvoted)
+        """
+        object_ct = ContentType.objects.get_for_model(object)
+        any_voters = Voters.objects.filter(
+            content_type=object_ct,
+            object_id=object.id,
+            user_id=user_id).count()
+
+        if not any_voters:
+            # creating new Voters record
+            user_vote = Voters(content_object=object,
+                               user_id=user_id)
+        else:
+            # fetch existing Voters record
+            user_vote = Voters.objects.get(
+                content_type=object_ct,
+                object_id=object.id,
+                user_id=user_id)
+
+        user_upvoted = bool(vote)
+        if user_upvoted:
+            if user_vote.vote in (0, -1):
+                # user can upvote only if he never voted
+                # or if he has downvoted earlier
+                object.votes += 1
+                user_vote.vote += 1
+                user_vote.save()
+            else:
+                return False
+        else:
+            if user_vote.vote in (0, 1):
+                # user can downvote only if he never voted
+                # or if he has upvoted earlier
+                object.votes -= 1
+                user_vote.vote -= 1
+                user_vote.save()
+            else:
+                return False
+
+        object.save()  # saving new votes rate for a question or for an answer
+        return True
