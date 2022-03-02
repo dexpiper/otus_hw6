@@ -4,43 +4,48 @@ from django.conf import settings
 
 class Sender:
     domain = settings.DOMAIN
-    subject = 'Hasker - New answer for your question'
+    subject = 'Hasker alerts'
     from_email = settings.SENDER_EMAIL
-    email_template = (
-        'Hello, {username}!\n'
-        'You have a new answer on your question "{qw_title}" on Hasker. '
-        'Would you like to check it out? \n'
-        '{qw_link}'
-        '\n\nIf you do not want email alerts anymore, turn them off in your'
-        ' profile: {profile_link}'
-    )
-    html_email_temlate = (
-        '<p>Hello, {username}!</p>'
-        '<p>You have a new answer on your question "{qw_title}" on Hasker. '
-        'Would you like to check it out?</p>'
-        '<p><a href="{qw_link}">Here is your link!</a></p>'
-        '<p>If you do not want email alerts anymore, turn them off in your'
-        ' <a href="{profile_link}">profile</a>.</p>'
-    )
 
-    def __init__(self, question):
-        self.username = question.author.username
-        self.user_email = question.author.email
-        self.qw_link = f'http://{self.domain}/questions/{question.id}'
-        self.qw_title = question.title
-        self.profile_link = f'http://{self.domain}/questions/profile'
-        self.dct = dict(
-            username=self.username,
-            qw_title=self.qw_title,
-            qw_link=self.qw_link,
-            profile_link=self.profile_link
-        )
+    def __init__(self, recipients: list[str], template: dict, vars: dict,
+                 subject: str = None, validate: bool = True):
+        self.recipients = recipients
+        self.template = template
+        self.vars = vars
+        if subject:
+            self.subject = subject
+        self.email_template = template.get('email_template', None)
+        self.html_email_temlate = template.get('html_email_temlate', None)
+        if validate:
+            try:
+                self.valid = self.validate()
+            except AssertionError as exc:
+                self.valid = False
+                self.error = str(exc)
+
+    def validate(self):
+        if not isinstance(self.recipients, list):
+            raise AssertionError('Recipients var should be a list')
+        for email in self.recipients:
+            if not isinstance(email, str):
+                raise AssertionError('Recipients var should contain strings')
+            if '@' not in email:
+                raise AssertionError(
+                    'Recipients var should contain valid emails '
+                    f'({email} is not)')
+        if not self.email_template:
+            raise AssertionError('Email_template not in template dict')
+        return True
 
     def send(self):
+        html_message = (
+            self.html_email_temlate.format_map(self.vars)
+            if self.html_email_temlate
+            else None
+        )
         return send_mail(subject=self.subject,
-                         message=self.email_template.format_map(self.dct),
-                         html_message=self.html_email_temlate.format_map(
-                            self.dct),
+                         message=self.email_template.format_map(self.vars),
+                         html_message=html_message,
                          from_email=self.from_email,
-                         recipient_list=[self.user_email],
+                         recipient_list=[self.recipients],
                          fail_silently=False)

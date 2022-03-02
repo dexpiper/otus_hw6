@@ -19,7 +19,7 @@
               <div class="text-muted">id #{{ question.id }}
               {% if question.status == 1 %}
               <img src="{% static 'questions/accept.png' %}" alt="Answered" width="20" height="20">
-              {% elif question.status == 0 and question.number_answers == 0 %}
+              {% else %}
               <img src="{% static 'questions/question.png' %}" alt="No answer yet" width="20" height="20">
               {% endif %}
               </div>

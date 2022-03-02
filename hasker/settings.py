@@ -137,12 +137,12 @@ MEDIA_URL = '/media/'
 # CONSOLE EMAIL
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_FILE_PATH = '/tmp/emails'
+DOMAIN = 'http://www.hasker.media'
+SENDER_EMAIL = 'example@hasker.com'
+SENDER_FALL_SILENT = False
 
 LOGIN_REDIRECT_URL = '/users/profile'
 LOGIN_URL = '/users/login'
 
 ELEMENTS_PER_PAGE = 20
 TRENDING_QUESTIONS_NUMBER = 20
-
-DOMAIN = 'www.hasker.media'
-SENDER_EMAIL = 'example@hasker.com'
