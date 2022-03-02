@@ -12,9 +12,6 @@ class TestSignUp(TestCase):
         response = self.client.get('/users/signup')
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'users/signup.html')
-        with self.assertRaises(KeyError):
-            # no error message should be shown
-            response.context['error_message']
 
     def test_sign_up_controller(self):
         """
@@ -22,21 +19,20 @@ class TestSignUp(TestCase):
         to her brand-new profile page
         """
         response = self.client.post(
-            '/users/do_signup',
+            '/users/signup',
             {
-                'login': 'alice',
+                'username': 'alice',
                 'email': 'alice@wonderland.com',
-                'password': 'alicepass',
-                'password-conf': 'alicepass'
+                'password1': 'alicepassword',
+                'password2': 'alicepassword'
             }
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         alice = User.objects.get(username='alice')
         self.assertEqual(alice.username, 'alice')
         self.assertEqual(alice.email, 'alice@wonderland.com')
         self.assertIsNotNone(alice.profile)
-        self.assertTemplateUsed(response, 'users/profile.html')
-        self.assertEqual(response.context.get('user'), alice)
+        self.assertRedirects(response, '/users/profile')
 
     def test_sign_up_with_existing_username(self):
         """
@@ -45,24 +41,24 @@ class TestSignUp(TestCase):
         alice = User.objects.create_user(
             username='alice',
             email='alice@wonderland.com',
-            password='alicepass'
+            password='alicepassword'
         )
         alice.save()
         response = self.client.post(
-            '/users/do_signup',
+            '/users/signup',
             {
-                'login': 'alice',
+                'username': 'alice',
                 'email': 'alice@wonderland.com',
-                'password': 'alicepass',
-                'password-conf': 'alicepass'
-            }
+                'password1': 'alicepassword',
+                'password2': 'alicepassword'
+            },
+            follow=True
         )
+        self.assertNotEqual(response.status_code, 302)
         self.assertTemplateNotUsed(response, 'users/profile.html')
         self.assertTemplateUsed(response, 'users/signup.html')
-        self.assertIn(
-            'Username alice is occupied',
-            response.context['error_message']
-        )
+        self.assertFormError(response, 'form', 'username',
+                             'A user with that username already exists.')
 
     def test_sign_up_with_existing_email(self):
         """
@@ -75,20 +71,20 @@ class TestSignUp(TestCase):
         )
         alice.save()
         response = self.client.post(
-            '/users/do_signup',
+            '/users/signup',
             {
-                'login': 'jane',
+                'username': 'jane',
                 'email': 'alice@wonderland.com',
-                'password': 'janepass',
-                'password-conf': 'janepass'
-            }
+                'password1': 'janepassword',
+                'password2': 'janepassword'
+            },
+            follow=True
         )
+        self.assertNotEqual(response.status_code, 302)
         self.assertTemplateNotUsed(response, 'users/profile.html')
         self.assertTemplateUsed(response, 'users/signup.html')
-        self.assertIn(
-            'There is a user with e-mail alice@wonderland.com',
-            response.context['error_message']
-        )
+        self.assertFormError(response, 'form', 'email',
+                             'A user with that email already exists.')
 
     def test_sign_up_password_misspelled(self):
         """
@@ -96,20 +92,19 @@ class TestSignUp(TestCase):
         her password
         """
         response = self.client.post(
-            '/users/do_signup',
+            '/users/signup',
             {
-                'login': 'jane',
+                'username': 'jane',
                 'email': 'jane@wonderland.com',
-                'password': 'janepass',
-                'password-conf': 'jneapsas'
+                'password1': 'janepassword',
+                'password2': 'jneapsasd&^5'
             }
         )
+        self.assertNotEqual(response.status_code, 302)
         self.assertTemplateNotUsed(response, 'users/profile.html')
         self.assertTemplateUsed(response, 'users/signup.html')
-        self.assertIn(
-            'Passwords do not match',
-            response.context['error_message']
-        )
+        self.assertFormError(response, 'form', 'password2',
+                             'The two password fields didn’t match.')
 
     def test_sign_up_empty_field(self):
         """
@@ -117,38 +112,35 @@ class TestSignUp(TestCase):
         """
         for d in (
             {
-                'login': '',
+                'username': '',
                 'email': 'jane@wonderland.com',
                 'password': 'janepass',
-                'password-conf': 'jneapsas'
+                'password2': 'jneapsas'
             },
             {
-                'login': 'jane',
+                'username': 'jane',
                 'email': '',
                 'password': 'janepass',
-                'password-conf': 'jneapsas'
+                'password2': 'jneapsas'
             },
             {
-                'login': 'jane',
+                'username': 'jane',
                 'email': 'jane@wonderland.com',
                 'password': '',
-                'password-conf': 'jneapsas'
+                'password2': 'jneapsas'
             },
             {
-                'login': 'jane',
+                'username': 'jane',
                 'email': 'jane@wonderland.com',
                 'password': 'janepass',
-                'password-conf': ''
+                'password2': ''
             }
                     ):
             with self.subTest(d=d):
-                response = self.client.post('/users/do_signup', d)
+                response = self.client.post('/users/signup', d)
                 self.assertTemplateNotUsed(response, 'users/profile.html')
                 self.assertTemplateUsed(response, 'users/signup.html')
-                self.assertIn(
-                    'Some fields are empty',
-                    response.context['error_message']
-                )
+                self.assertContains(response, 'This field is required.')
 
     def test_logged_user_cannot_signup(self):
         """
@@ -180,62 +172,66 @@ class TestLogIn(TestCase):
 
     def test_log_in_page(self):
         response = self.client.get('/users/login')
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'users/login.html')
         with self.assertRaises(KeyError):
-            # no error message should be shown
             response.context['error_message']
 
     def test_log_in_controller(self):
         response = self.client.post(
-            '/users/do_login',
+            '/users/login',
             {
-                'login': 'alice',
+                'username': 'alice',
                 'password': 'alicepass'
-            }
+            },
+            follow=True
         )
         self.assertEqual(auth.get_user(self.client), self.alice)
         self.assertTrue(auth.get_user(self.client).is_authenticated)
         self.assertEqual(response.status_code, 200)
+        self.assertRedirects(response, '/users/profile')
         self.assertTemplateUsed(response, 'users/profile.html')
         self.assertEqual(response.context['user'], self.alice)
 
     def test_bad_login_credentials(self):
         for dct in (
             {
-                'login': 'alice',
+                'username': 'alice',
                 'password': ''
             },
             {
-                'login': '',
+                'username': '',
                 'password': 'alicepass'
             },
             {
-                'login': 'foobar',
+                'username': 'foobar',
                 'password': 'alicepass'
             },
             {
-                'login': 'alice',
+                'username': 'alice',
                 'password': 'foobar'
             },
             {
-                'login': '',
+                'username': '',
                 'password': ''
             },
 
         ):
             with self.subTest(dct=dct):
                 response = self.client.post(
-                    '/users/do_login',
-                    dct
+                    '/users/login',
+                    dct,
+                    follow=True
                 )
                 self.assertTemplateNotUsed(response, 'users/profile.html')
                 self.assertTemplateUsed(response, 'users/login.html')
-                self.assertIn(
-                    'Username or password are invalid',
-                    response.context['error_message']
+                self.assertContains(
+                    response,
+                    "Your username and password didn't match."
                 )
 
 
+'''
 class TestProfile(TestCase):
 
     @classmethod
@@ -284,3 +280,4 @@ class TestProfile(TestCase):
         self.assertEqual(alice_updated.profile.send_email, True)
         self.assertEqual(alice_updated.email, 'newalice@wonderland.com')
         self.assertIsNotNone(alice_updated.profile.avatar)
+'''
