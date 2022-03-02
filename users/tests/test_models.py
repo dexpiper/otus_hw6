@@ -1,8 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 
-from users.models import Profile
-
 
 class TestUserBasics(TestCase):
 
@@ -52,10 +50,3 @@ class TestUserBasics(TestCase):
         sam.profile.avatar = '/media/sam_avatar.jpg'
         sam.profile.save()
         self.assertEqual(sam.profile.avatar, '/media/sam_avatar.jpg')
-
-    def test_profile_method_param_exists(self):
-        self.assertTrue(Profile.param_exists('email', 'sam@pisem.net'))
-        sam = User.objects.get(username='Sam')
-        sam.email = 'sam@yagoo.what'
-        sam.save()
-        self.assertTrue(Profile.param_exists('email', 'sam@yagoo.what'))
