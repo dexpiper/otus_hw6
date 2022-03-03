@@ -1,3 +1,6 @@
+import tempfile
+from unittest.mock import patch
+
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.contrib import auth
@@ -231,7 +234,6 @@ class TestLogIn(TestCase):
                 )
 
 
-'''
 class TestProfile(TestCase):
 
     @classmethod
@@ -255,29 +257,27 @@ class TestProfile(TestCase):
                 self.client.force_login(usr)
                 response = self.client.get('/users/profile')
                 self.assertTemplateUsed(response, 'users/profile.html')
-                with self.assertRaises(KeyError):
-                    # no error message should be shown
-                    response.context['error_message']
-                    response.context['submit_email']
-                    response.context['submit_avatar']
-                    response.context['submit_alert']
                 self.assertEqual(response.context['user'], usr)
 
-    def test_profile_logic(self):
+    @patch('django.core.files.storage.FileSystemStorage.save')
+    def test_profile_logic(self, mock_save):
         self.client.force_login(self.alice)
-        with open('users/tests/fixtures/my_best_photo.jpg', 'rb') as image:
+        mock_save.return_value = 'alice_avatar.jpg'
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as tmpimage:
             response = self.client.post(
-                    '/users/save_profile',
+                    '/users/profile',
                     {
-                        'avatar': image,
+                        'avatar': tmpimage,
                         'alerts': 'on',
                         'email': 'newalice@wonderland.com'
                     },
-                    format='multipart'
+                    format='multipart',
+                    follow=True
                 )
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
         alice_updated = User.objects.get(username='alice')
         self.assertEqual(alice_updated.profile.send_email, True)
         self.assertEqual(alice_updated.email, 'newalice@wonderland.com')
+        self.assertContains(response, "email alerts turned on")
         self.assertIsNotNone(alice_updated.profile.avatar)
-'''
+        mock_save.assert_called_once()

@@ -20,11 +20,8 @@ def update_email(request, email: str) -> bool:
 
 
 def update_alerts(request, alerts: bool) -> bool:
-    print(f'Got to update alerts. Alerts: {alerts}')
     if request.user.profile.send_email == alerts:
-        print('Alerts not updated')
         return False
     request.user.profile.send_email = alerts
     request.user.profile.save()
-    print('Alerts updated')
     return True
