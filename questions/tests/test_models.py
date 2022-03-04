@@ -235,6 +235,7 @@ class TestAnswers(TestCase):
         )
         answer1.save()
         self.assertEqual(self.qw2.get_answers_number(), 1)
+
         answer2 = Answer(
             author=self.alice,
             question=self.qw2,
@@ -242,6 +243,8 @@ class TestAnswers(TestCase):
         )
         answer2.save()
         self.assertEqual(self.qw2.get_answers_number(), 2)
+
+        # add five new answers
         for i in range(5):
             answers_lot = []
             answers_lot.append(
@@ -252,7 +255,15 @@ class TestAnswers(TestCase):
                 )
             )
             Answer.objects.bulk_create(answers_lot)
-        self.assertEqual(self.qw2.get_answers_number(), 7)
+        self.assertEqual(self.qw2.get_answers_number(), 7)  # 2 + 5 = 7
+
+
+class TestTag(TestCase):
+    pass
+
+
+class TestVoters(TestCase):
+    pass
 
 
 class TestTimediffHelper(TestCase):
