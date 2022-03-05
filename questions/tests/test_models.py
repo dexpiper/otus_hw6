@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.utils.lorem_ipsum import words, paragraphs
 from django.conf import settings
 
-from questions.models import Question, Answer
+from questions.models import Question, Answer, Tag
 from questions.helpers import get_time_diff
 
 
@@ -259,7 +259,31 @@ class TestAnswers(TestCase):
 
 
 class TestTag(TestCase):
-    pass
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.sam = User.objects.create_user(
+            username='Sam',
+            email='sam@pisem.net',
+            password='sampassword'
+        )
+        cls.sam.save()
+        cls.q = Question(
+            title='How to Django?',
+            author=cls.sam,
+            content='Lorem ipsum dolor est'
+        )
+        cls.q.save()
+
+    def setUp(self):
+        self.tag = Tag(
+            title='Python'
+        )
+        self.tag.save()
+
+    def test_tag_creation(self):
+        self.assertEqual(self.tag.title, 'Python')
+        self.assertTrue(len(self.tag.questions) == 0)
 
 
 class TestVoters(TestCase):
