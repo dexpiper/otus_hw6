@@ -1,13 +1,12 @@
 import random
-from datetime import datetime, timezone, timedelta
 
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.utils.lorem_ipsum import words, paragraphs
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 
-from questions.models import Question, Answer, Tag
-from questions.helpers import get_time_diff
+from questions.models import Question, Answer, Tag, Voters
 
 
 class TestQuestion(TestCase):
@@ -283,106 +282,168 @@ class TestTag(TestCase):
 
     def test_tag_creation(self):
         self.assertEqual(self.tag.title, 'Python')
-        self.assertTrue(len(self.tag.questions) == 0)
+        self.assertTrue(self.tag.questions.all().count() == 0)
+
+    def test_tag_add_question(self):
+        self.tag.questions.add(self.q)
+        self.assertTrue(self.tag.questions.all().count() == 1)
+        self.assertEqual(self.tag.questions.get(pk=self.q.id), self.q)
+
+    def test_tag_add_multiple_questions(self):
+        for i in range(3):
+            q = Question(
+                    title=words(4, False) + str(i),
+                    author=self.sam,
+                    content=(paragraphs(1, False))
+                )
+            q.save()
+            self.tag.questions.add(q)
+        self.assertTrue(self.tag.questions.all().count() == 3)
+
+    def test_tag_return_title_as_str(self):
+        self.assertEqual(str(self.tag), 'Python')
 
 
 class TestVoters(TestCase):
-    pass
 
+    @classmethod
+    def setUpTestData(cls):
+        cls.sam = User.objects.create_user(
+            username='Sam',
+            email='sam@pisem.net',
+            password='sampassword'
+        )
+        cls.sam.save()
+        cls.alice = User.objects.create_user(
+            username='Alice',
+            email='alice@wonderland.net',
+            password='alicepassword'
+        )
+        cls.alice.save()
+        cls.q = Question(
+            title='How to Django?',
+            author=cls.sam,
+            content='Lorem ipsum dolor est'
+        )
+        cls.q.save()
+        cls.a = Answer(
+            author=cls.sam,
+            question=cls.q,
+            content=words(10, common=False)
+        )
+        cls.a.save()
 
-class TestTimediffHelper(TestCase):
+    def test_basic_votes_creation_question(self):
+        vote = Voters(content_object=self.q, user_id=self.sam.id)
+        vote.save()
+        object_ct = ContentType.objects.get_for_model(self.q)
+        self.assertEqual(
+            Voters.objects.filter(
+                content_type=object_ct,
+                object_id=self.q.id,
+                user_id=self.sam.id
+            ).count(), 1)
+        retrieved_vote = Voters.objects.get(
+            content_type=object_ct,
+            object_id=self.q.id,
+            user_id=self.sam.id
+        )
+        self.assertEqual(retrieved_vote.user_id,
+                         self.sam.id)
+        self.assertEqual(retrieved_vote.object_id,
+                         self.q.id)
+        self.assertEqual(retrieved_vote.vote, 0)
 
-    attempts = range(1000)
+    def test_register_q_upvote(self):
+        Voters.register_vote(self.q, self.sam.id, vote=1)
+        object_ct = ContentType.objects.get_for_model(self.q)
+        retrieved_vote = Voters.objects.get(
+            content_type=object_ct,
+            object_id=self.q.id,
+            user_id=self.sam.id
+        )
+        self.assertEqual(retrieved_vote.vote, 1)
 
-    def test_now(self):
-        s = get_time_diff(datetime.now(timezone.utc))
-        self.assertEqual(s, 'Just now')
+    def test_register_q_downvote(self):
+        Voters.register_vote(self.q, self.sam.id, vote=0)
+        object_ct = ContentType.objects.get_for_model(self.q)
+        retrieved_vote = Voters.objects.get(
+            content_type=object_ct,
+            object_id=self.q.id,
+            user_id=self.sam.id
+        )
+        self.assertEqual(retrieved_vote.vote, -1)
 
-    def test_seconds(self):
-        for _ in self.attempts:
-            random_seconds = random.randint(1, 58)
-            with self.subTest(random_minutes=random_seconds):
-                seconds_ago = (
-                    datetime.now(timezone.utc)
-                    - timedelta(seconds=random_seconds)
-                )
-                s = get_time_diff(seconds_ago)
-                self.assertEqual(s, 'Just now')
+    def test_register_ans_upvote(self):
+        Voters.register_vote(self.a, self.sam.id, vote=1)
+        object_ct = ContentType.objects.get_for_model(self.a)
+        retrieved_vote = Voters.objects.get(
+            content_type=object_ct,
+            object_id=self.a.id,
+            user_id=self.sam.id
+        )
+        self.assertEqual(retrieved_vote.vote, 1)
 
-    def test_minutes(self):
-        for _ in self.attempts:
-            random_minutes = random.randint(2, 58)
-            with self.subTest(random_minutes=random_minutes):
-                minutes_ago = (
-                    datetime.now(timezone.utc)
-                    - timedelta(minutes=random_minutes)
-                )
-                s = get_time_diff(minutes_ago)
-                self.assertIn('minute(s) ago', s)
-                int_result = int(s.split()[0])
-                self.assertAlmostEqual(int_result, random_minutes, delta=0.8)
+    def test_register_ans_downvote(self):
+        Voters.register_vote(self.a, self.sam.id, vote=0)
+        object_ct = ContentType.objects.get_for_model(self.a)
+        retrieved_vote = Voters.objects.get(
+            content_type=object_ct,
+            object_id=self.a.id,
+            user_id=self.sam.id
+        )
+        self.assertEqual(retrieved_vote.vote, -1)
 
-    def test_hours(self):
-        for _ in self.attempts:
-            random_hours = random.randint(1, 23)
-            with self.subTest(random_hours=random_hours):
-                hours_ago = (
-                    datetime.now(timezone.utc)
-                    - timedelta(hours=random_hours)
-                )
-                s = get_time_diff(hours_ago)
-                self.assertIn('hour(s) ago', s)
-                int_result = int(s.split()[0])
-                self.assertAlmostEqual(int_result, random_hours, delta=0.8)
+    def test_register_assert_integrity_answers(self):
+        '''
+        Check that user upvote and downvote only in corridor (-1, 0, 1)
+        '''
+        def check(object: Answer or Question):
+            first_upvote = Voters.register_vote(object, self.sam.id, vote=1)
+            second_upvote = Voters.register_vote(object, self.sam.id, vote=1)
+            self.assertTrue(first_upvote)
+            self.assertFalse(second_upvote)
+            object_ct = ContentType.objects.get_for_model(object)
+            retrieved_vote = Voters.objects.get(
+                content_type=object_ct,
+                object_id=object.id,
+                user_id=self.sam.id
+            )
+            self.assertEqual(retrieved_vote.vote, 1)  # now vote is 1
+            self.assertEqual(object.votes, 1)
 
-    def test_days(self):
-        for _ in self.attempts:
-            random_days = random.randint(1, 6)
-            with self.subTest(random_days=random_days):
-                days_ago = (
-                    datetime.now(timezone.utc)
-                    - timedelta(days=random_days)
-                )
-                s = get_time_diff(days_ago)
-                self.assertIn('day(s) ago', s)
-                int_result = int(s.split()[0])
-                self.assertAlmostEqual(int_result, random_days, delta=0.5)
+            first_downvote = Voters.register_vote(object, self.sam.id, vote=0)
+            second_downvote = Voters.register_vote(object, self.sam.id, vote=0)
+            third_downvote = Voters.register_vote(object, self.sam.id, vote=0)
+            self.assertTrue(first_downvote)
+            self.assertTrue(second_downvote)
+            self.assertFalse(third_downvote)
+            retrieved_vote = Voters.objects.get(
+                content_type=object_ct,
+                object_id=object.id,
+                user_id=self.sam.id
+            )
+            self.assertEqual(retrieved_vote.vote, -1)  # now vote is -1
+            self.assertEqual(object.votes, -1)
 
-    def test_weeks(self):
-        for _ in self.attempts:
-            random_weeks = random.randint(1, 4)
-            with self.subTest(random_weeks=random_weeks):
-                weeks_ago = (
-                    datetime.now(timezone.utc)
-                    - timedelta(weeks=random_weeks)
-                )
-                s = get_time_diff(weeks_ago)
-                self.assertIn('week(s) ago', s)
-                int_result = int(s.split()[0])
-                self.assertAlmostEqual(int_result, random_weeks, delta=0.5)
+            first_upvote = Voters.register_vote(object, self.sam.id, vote=1)
+            second_upvote = Voters.register_vote(object, self.sam.id, vote=1)
+            third_upvote = Voters.register_vote(object, self.sam.id, vote=1)
+            self.assertTrue(first_upvote)
+            self.assertTrue(second_upvote)
+            self.assertFalse(third_upvote)
+            retrieved_vote = Voters.objects.get(
+                content_type=object_ct,
+                object_id=object.id,
+                user_id=self.sam.id
+            )
+            self.assertEqual(retrieved_vote.vote, 1)  # vote again is 1
+            self.assertEqual(object.votes, 1)
 
-    def test_months(self):
-        for _ in self.attempts:
-            random_months = random.randint(1, 12)
-            with self.subTest(random_months=random_months):
-                months_ago = (
-                    datetime.now(timezone.utc)
-                    - timedelta(days=random_months*30)
-                )
-                s = get_time_diff(months_ago)
-                self.assertIn('month(s) ago', s)
-                int_result = int(s.split()[0])
-                self.assertAlmostEqual(int_result, random_months, delta=0.2)
+            alice_voted = Voters.register_vote(object, self.alice.id, vote=1)
+            self.assertTrue(alice_voted)  # Alice still can vote after Sam
+            self.assertEqual(object.votes, 2)
 
-    def test_years(self):
-        for _ in self.attempts:
-            random_years = random.randint(1, 20)
-            with self.subTest(random_years=random_years):
-                years_ago = (
-                    datetime.now(timezone.utc)
-                    - timedelta(days=random_years*365)
-                )
-                s = get_time_diff(years_ago)
-                self.assertIn('year(s) ago', s)
-                int_result = int(s.split()[0])
-                self.assertAlmostEqual(int_result, random_years, delta=0.1)
+        for obj in (self.q, self.a):     # for Questions and for Answers
+            with self.subTest(obj=obj):
+                check(obj)

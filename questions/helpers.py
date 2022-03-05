@@ -25,7 +25,7 @@ def get_time_diff(thetime) -> str:
         return 'Just now'
 
 
-def save_tags(tags, question, tag_model):
+def save_tags(tags: list, question, tag_model):
     if not tags:
         return
     for tag in tags:
@@ -39,3 +39,4 @@ def save_tags(tags, question, tag_model):
             continue
         t = tag_model.objects.create(title=tag)
         t.questions.add(question)
+        t.save()
