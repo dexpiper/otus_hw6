@@ -34,7 +34,7 @@ class QuestionForm(forms.Form):
     def clean_tags(self):
         provided_tags = self.cleaned_data.get('tags')
         if not provided_tags:
-            return ''
+            return []
         tags = provided_tags.split()
         if len(tags) > 3:
             raise forms.ValidationError(
