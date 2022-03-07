@@ -1,7 +1,7 @@
 VENV = env
 
 setup-deps:
-	yum install python3-pip python3-dev libpq-dev curl nginx -y
+	yum install python3-pip python3 libpq curl nginx -y
 
 setup-db:
 	yum install postgresql postgresql-contrib -y
