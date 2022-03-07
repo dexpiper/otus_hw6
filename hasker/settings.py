@@ -9,12 +9,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-)+y@kt*u#z9j(_c3g79w42(np)-%h(8^vfgnh%7_lb=i)s4)s2'  # noqa E501
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'ny12^:-+gcg#af02&9p$g+!#a3cup@&jfp{!$8obt2_+&k3q+pmu)5%'
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    os.environ.get('DJANGO_HOST', '.localhost'),
+    '127.0.0.1', '[::1]'
+]
+
+SESSION_COOKIE_SECURE = os.environ.get('CSRF_COOKIE', 'True') == 'True'
+
+CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE', 'True') == 'True'
 
 
 # Application definition
@@ -26,10 +36,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'debug_toolbar',
     'questions',
     'users',
 ]
+if DEBUG:
+    INSTALLED_APPS.append('debug_toolbar')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -137,8 +148,8 @@ MEDIA_URL = '/media/'
 # CONSOLE EMAIL
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_FILE_PATH = '/tmp/emails'
-DOMAIN = 'http://www.hasker.media'
-SENDER_EMAIL = 'example@hasker.com'
+DOMAIN = os.environ.get('DJANGO_DOMAIN', 'http://www.hasker.media')
+SENDER_EMAIL = os.environ.get('DJANGO_EMAIL', 'example@hasker.com')
 SENDER_FALL_SILENT = False
 
 LOGIN_REDIRECT_URL = '/users/profile'
