@@ -23,4 +23,4 @@ $(VENV)/bin/activate: setup-deps
 prod: $(VENV)/bin/activate migrations
 	export DJANGO_DEBUG=False
 	pip install -r requirements-prod.txt
-	gunicorn -c config/gunicorn/dev.py
+	gunicorn hasker.wsgi:application -c config/gunicorn/dev.py
